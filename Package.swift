@@ -7,9 +7,8 @@ let package = Package(
   name: "HandEye",
   products: [
     // Products define the executables and libraries a package produces, and make them visible to other packages.
-    .library(
-      name: "HandEye",
-      targets: ["HandEye"]),
+    .library(name: "HandEye", targets: ["HandEye"]),
+    .executable(name: "CameraResectioning", targets: ["CameraResectioning"]),
   ],
   dependencies: [
     // Dependencies declare other packages that this package depends on.
@@ -24,6 +23,10 @@ let package = Package(
       dependencies: [
           .product(name: "SwiftFusion", package: "SwiftFusion"),
       ]),
+    .target(
+      name: "CameraResectioning",
+      dependencies: ["HandEye"]
+    ),
     .testTarget(
       name: "HandEyeTests",
       dependencies: ["HandEye"]),

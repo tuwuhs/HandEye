@@ -20,10 +20,11 @@ public struct CameraCalibration: Equatable {
   }
 }
 
-public struct PinholeCamera {
+public struct PinholeCamera: Differentiable {
   public var pose: Pose3
-  public var calibration: CameraCalibration
+  @noDerivative public var calibration: CameraCalibration
 
+  @differentiable
   public init(_ pose: Pose3, _ calibration: CameraCalibration) {
     self.pose = pose
     self.calibration = calibration
@@ -33,10 +34,11 @@ public struct PinholeCamera {
     self.init(Pose3(), CameraCalibration())
   }
 
-  // @differentiable
+  @differentiable
   public func project(_ point: Vector3) -> Vector2 {
     // Transform to camera coordinates
-    let q = pose.rot.inverse().Adjoint(point - pose.t)
+    // let q = pose.rot.inverse().Adjoint(point - pose.t)
+    let q = pose.rot.inverse() * (point - pose.t)
 
     // Project
     let d = 1.0 / q.z
