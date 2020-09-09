@@ -11,11 +11,22 @@ func main() {
     print("tvec: \(handToEye.t - cam2Gripper.t)")
   }
 
-  let hTe_Tsai = calibrateHandEyeTsai(worldToHand: gripper2Base, eyeToObject: target2Cam)
+  print("Actual hand-to-eye: \(cam2Gripper)")
+  print("Actual world-to-object: \(target2Base)")
 
+  print()
+
+  let hTe_tsai = calibrateHandEye_tsai(worldToHand: gripper2Base, eyeToObject: target2Cam)
   print("Tsai's method")
-  print("Estimated hand-to-eye: \(hTe_Tsai)")
-  printError(hTe_Tsai)
+  print("Estimated hand-to-eye: \(hTe_tsai)")
+  printError(hTe_tsai)
+
+  print()
+
+  let (hTe_factorGraphPose, wTo_factorGraphPose) = calibrateHandEye_factorGraphPose(worldToHand: gripper2Base, eyeToObject: target2Cam)
+  print("Factor graph, pose measurements")
+  print("Estimated hand-to-eye: \(hTe_factorGraphPose)")
+  printError(hTe_factorGraphPose)
 }
 
 main()

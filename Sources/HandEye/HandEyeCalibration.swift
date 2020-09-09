@@ -6,7 +6,9 @@ import TensorFlow
 // MARK: - Tsai's method
 
 /// Returns the estimated handToEye transformation
-public func calibrateHandEyeTsai(worldToHand Hg: [Pose3], eyeToObject Hc: [Pose3]) -> Pose3 {
+public func calibrateHandEye_tsai(worldToHand Hg: [Pose3], eyeToObject Hc: [Pose3]) -> Pose3 {
+  // Solves AX = XB problem
+
   let K = Hg.count * (Hg.count - 1) / 2
   var A = Tensor(repeating: 0, shape: TensorShape(3*K, 3))
   var b = Tensor(repeating: 0, shape: TensorShape(3*K, 1))
@@ -68,22 +70,53 @@ public func calibrateHandEyeTsai(worldToHand Hg: [Pose3], eyeToObject Hc: [Pose3
 // MARK: - Factor graph, pose measurements
 
 public struct HandEyeMeasurementFactor<Pose: LieGroup>: LinearizableFactor2 {
-    public let edges: Variables.Indices
-    public let eye2Object: Pose
-    public let world2Hand: Pose
-    
-    public init (_ hand2EyeID: TypedID<Pose>, _ world2ObjectID: TypedID<Pose>, _ eye2Object: Pose, _ world2Hand: Pose) {
-        self.edges = Tuple2(hand2EyeID, world2ObjectID)
-        self.eye2Object = eye2Object
-        self.world2Hand = world2Hand
-    }
+  public let edges: Variables.Indices
+  public let eye2Object: Pose
+  public let world2Hand: Pose
+  
+  public init (_ hand2EyeID: TypedID<Pose>, _ world2ObjectID: TypedID<Pose>, _ eye2Object: Pose, _ world2Hand: Pose) {
+    self.edges = Tuple2(hand2EyeID, world2ObjectID)
+    self.eye2Object = eye2Object
+    self.world2Hand = world2Hand
+  }
 
-    @differentiable
-    public func errorVector(_ hand2Eye: Pose, _ world2Object: Pose) -> Pose.TangentVector {
-        // Q: What is the difference? Which error vector is more correct?
-        // return world2Hand.localCoordinate(world2Object * eye2Object.inverse() * hand2Eye.inverse())
-        return eye2Object.localCoordinate(hand2Eye.inverse() * world2Hand.inverse() * world2Object)
-    }
+  @differentiable
+  public func errorVector(_ hand2Eye: Pose, _ world2Object: Pose) -> Pose.TangentVector {
+    // Q: What is the difference? Which error vector is more correct?
+    // return world2Hand.localCoordinate(world2Object * eye2Object.inverse() * hand2Eye.inverse())
+    return eye2Object.localCoordinate(hand2Eye.inverse() * world2Hand.inverse() * world2Object)
+  }
 }
 
+/// Returns the estimated handToEye transformation
+public func calibrateHandEye_factorGraphPose(worldToHand: [Pose3], eyeToObject: [Pose3]) -> (Pose3, Pose3) {
+  // Solves AX = ZB problem
 
+  let nPoses = worldToHand.count
+
+  var x = VariableAssignments()
+  let handToEyeID = x.store(Pose3())
+  let worldToObjectID = x.store(Pose3())
+
+  var graph = FactorGraph()
+  for i in 0..<nPoses {
+    graph.store(HandEyeMeasurementFactor(handToEyeID, worldToObjectID, eyeToObject[i], worldToHand[i]))
+  }
+
+  // for _ in 0..<3 {
+  //   let gfg = graph.linearized(at: x)
+  //   var dx = x.tangentVectorZeros
+  //   var opt = GenericCGLS(precision: 1e-6, max_iteration: 400)
+  //   opt.optimize(gfg: gfg, initial: &dx)
+  //   x.move(along: dx)
+  // }
+
+  var opt = LM(precision: 1e-6, max_iteration: 500)
+  try? opt.optimize(graph: graph, initial: &x)
+
+  // Error vectors
+  // print(cam2Gripper.localCoordinate(x[handToEyeID]))
+  // print(target2Base.localCoordinate(x[worldToObjectID]))
+
+  return (x[handToEyeID], x[worldToObjectID])
+}
