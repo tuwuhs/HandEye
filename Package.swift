@@ -9,6 +9,7 @@ let package = Package(
     // Products define the executables and libraries a package produces, and make them visible to other packages.
     .library(name: "HandEye", targets: ["HandEye"]),
     .executable(name: "CameraResectioning", targets: ["CameraResectioning"]),
+    .executable(name: "SimulatedCalibration", targets: ["SimulatedCalibration"]),
   ],
   dependencies: [
     // Dependencies declare other packages that this package depends on.
@@ -25,6 +26,10 @@ let package = Package(
       ]),
     .target(
       name: "CameraResectioning",
+      dependencies: ["HandEye"]
+    ),
+    .target(
+      name: "SimulatedCalibration",
       dependencies: ["HandEye"]
     ),
     .testTarget(

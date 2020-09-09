@@ -84,15 +84,6 @@ extension Rot3 {
   }
 }
 
-fileprivate func skew3(_ v: Vector3) -> Tensor<Double> {
-  let result = Tensor([
-    Tensor([0, -v.z, v.y]),
-    Tensor([v.z, 0, -v.x]),
-    Tensor([-v.y, v.x, 0])
-  ])
-  return result
-}
-
 // MARK: - Tensor
 
 extension Rot3 {

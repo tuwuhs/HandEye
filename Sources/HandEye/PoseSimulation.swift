@@ -41,14 +41,13 @@ public func simulateDataEyeInHand(nPoses: Int, addNoise: Bool) -> ([Pose3], [Pos
     maxT: Vector3(3.5, 3.5, 3.5)
   )
 
-  var gripper2BaseClean: [Pose3] = []
-  for _ in 0..<nPoses {
-    gripper2BaseClean.append(generatePose(
+  let gripper2BaseClean = (0..<nPoses).map { _ in
+    generatePose(
       minTheta: 5.0 * .pi / 180.0,
       maxTheta: 45.0 * .pi / 180.0,
       minT: Vector3(0.5, 0.5, 0.5),
       maxT: Vector3(1.5, 1.5, 1.5)
-    ))
+    )
   }
 
   var rng = SystemRandomNumberGenerator()
@@ -58,7 +57,7 @@ public func simulateDataEyeInHand(nPoses: Int, addNoise: Bool) -> ([Pose3], [Pos
 
     if addNoise {
       let rnoise = NormalDistribution<Double>(mean: 0.0, standardDeviation: 0.002)
-      let rvec = Rot3().localCoordinate(pose.rot) + Vector3(
+      let rvec = pose.rot.toRvec() + Vector3(
         rnoise.next(using: &rng),
         rnoise.next(using: &rng),
         rnoise.next(using: &rng)
@@ -71,7 +70,7 @@ public func simulateDataEyeInHand(nPoses: Int, addNoise: Bool) -> ([Pose3], [Pos
         tnoise.next(using: &rng)
       )
 
-      return Pose3(Rot3.fromTangent(rvec), tvec)
+      return Pose3(Rot3.fromRvec(rvec), tvec)
     } else {
       return pose
     }
@@ -80,7 +79,7 @@ public func simulateDataEyeInHand(nPoses: Int, addNoise: Bool) -> ([Pose3], [Pos
   let gripper2Base = gripper2BaseClean.map { p -> Pose3 in 
     if addNoise {
       let rnoise = NormalDistribution<Double>(mean: 0.0, standardDeviation: 0.001)
-      let rvec = Rot3().localCoordinate(p.rot) + Vector3(
+      let rvec = p.rot.toRvec() + Vector3(
         rnoise.next(using: &rng),
         rnoise.next(using: &rng),
         rnoise.next(using: &rng)
@@ -93,7 +92,7 @@ public func simulateDataEyeInHand(nPoses: Int, addNoise: Bool) -> ([Pose3], [Pos
         tnoise.next(using: &rng)
       )
 
-      return Pose3(Rot3.fromTangent(rvec), tvec)
+      return Pose3(Rot3.fromRvec(rvec), tvec)
     } else {
       return p
     }
