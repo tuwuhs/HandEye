@@ -37,7 +37,6 @@ public struct PinholeCamera: Differentiable {
   @differentiable
   public func project(_ point: Vector3) -> Vector2 {
     // Transform to camera coordinates
-    // let q = pose.rot.inverse().Adjoint(point - pose.t)
     let q = pose.rot.inverse() * (point - pose.t)
 
     // Project
