@@ -117,20 +117,22 @@ public func simulatePoseKoide() -> ([Pose3], [Pose3], Pose3, Pose3) {
 
   let xOffset = 1.0
   let yOffset = 0.0
-  let zOffset = 0.5
+  let zOffset = 0.75
+
+  let handToEyeTrans = 0.3
+  let handToEyeRotDeg = 90.0
 
   let wTo = Pose3(Rot3(), Vector3(1.0, 0.0, 0.0))
   
   var rng = SystemRandomNumberGenerator()
-  let rotDistribution = NormalDistribution<Double>(mean: 0.0, standardDeviation: 10.0 * .pi / 180.0)
-  let transDistribution = NormalDistribution<Double>(mean: 0.0, standardDeviation: 10.0 * .pi / 180.0)
+  let rotDistribution = NormalDistribution<Double>(mean: 0.0, standardDeviation: handToEyeRotDeg * .pi / 180.0)
+  let transDistribution = NormalDistribution<Double>(mean: 0.0, standardDeviation: handToEyeTrans)
   let eTh = Pose3(Rot3.fromAngleAxis(
-      rotDistribution.next(using: &rng),
-      Vector3(
-        Double.random(in: -1.0...1.0),
-        Double.random(in: -1.0...1.0),
-        Double.random(in: -1.0...1.0))
-    ), transDistribution.next(using: &rng) * Vector3(
+    rotDistribution.next(using: &rng), Vector3(
+      Double.random(in: -1.0...1.0),
+      Double.random(in: -1.0...1.0),
+      Double.random(in: -1.0...1.0))), 
+    transDistribution.next(using: &rng) * Vector3(
       Double.random(in: -1.0...1.0),
       Double.random(in: -1.0...1.0),
       Double.random(in: -1.0...1.0))
@@ -162,11 +164,28 @@ public func simulatePoseKoide() -> ([Pose3], [Pose3], Pose3, Pose3) {
 
         let eTo = wTe.inverse() * wTo
         eToList.append(eTo)
-
-        // TODO: add noise
       }
     }
   }
 
   return (wThList, eToList, eTh.inverse(), wTo)
+}
+
+public func applyNoise(_ poses: [Pose3], _ stdevTrans: Double, _ stdevRotDeg: Double) -> [Pose3] {
+  var rng = SystemRandomNumberGenerator()
+  let rnoise = NormalDistribution<Double>(mean: 0.0, standardDeviation: stdevRotDeg * .pi / 180.0)
+  let tnoise = NormalDistribution<Double>(mean: 0.0, standardDeviation: stdevTrans)
+  return poses.map { p -> Pose3 in
+    let noise = Pose3(Rot3.fromAngleAxis(
+      rnoise.next(using: &rng), Vector3(
+        Double.random(in: -1.0...1.0),
+        Double.random(in: -1.0...1.0),
+        Double.random(in: -1.0...1.0))), 
+      tnoise.next(using: &rng) * Vector3(
+        Double.random(in: -1.0...1.0),
+        Double.random(in: -1.0...1.0),
+        Double.random(in: -1.0...1.0))
+    )
+    return noise * p
+  }
 }

@@ -4,7 +4,9 @@ import SwiftFusion
 
 func main() {
   // let (gripper2Base, target2Cam, cam2Gripper, target2Base) = simulatePoseEyeInHand(nPoses: 10, addNoise: true)
-  let (gripper2Base, target2Cam, cam2Gripper, target2Base) = simulatePoseKoide()
+  
+  var (gripper2Base, target2Cam, cam2Gripper, target2Base) = simulatePoseKoide()
+  gripper2Base = applyNoise(gripper2Base, 0.05, 1.0)
 
   let printError = { (handToEye: Pose3) in 
     print("Errors:")
@@ -31,5 +33,3 @@ func main() {
 }
 
 main()
-
-// simulatePoseKoide()
