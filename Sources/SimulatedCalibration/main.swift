@@ -3,7 +3,8 @@ import HandEye
 import SwiftFusion
 
 func main() {
-  let (gripper2Base, target2Cam, cam2Gripper, target2Base) = simulateDataEyeInHand(nPoses: 10, addNoise: true)
+  // let (gripper2Base, target2Cam, cam2Gripper, target2Base) = simulatePoseEyeInHand(nPoses: 10, addNoise: true)
+  let (gripper2Base, target2Cam, cam2Gripper, target2Base) = simulatePoseKoide()
 
   let printError = { (handToEye: Pose3) in 
     print("Errors:")
@@ -30,3 +31,5 @@ func main() {
 }
 
 main()
+
+// simulatePoseKoide()

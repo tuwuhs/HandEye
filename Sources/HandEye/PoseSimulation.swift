@@ -2,6 +2,8 @@
 import SwiftFusion
 import TensorFlow
 
+// MARK: - Simulated dataset from OpenCV calib3d tests
+
 /// Returns random pose within the given limits
 func generatePose(minTheta: Double, maxTheta: Double, minT: Vector3, maxT: Vector3) -> Pose3 {
   let r = Rot3.fromAngleAxis(
@@ -23,7 +25,7 @@ func generatePose(minTheta: Double, maxTheta: Double, minT: Vector3, maxT: Vecto
 }
 
 /// Returns gripper2Base (`[Pose3]`), target2Cam ('[Pose3]'), cam2Gripper (`Pose3`), target2Base (`Pose3`)
-public func simulateDataEyeInHand(nPoses: Int, addNoise: Bool) -> ([Pose3], [Pose3], Pose3, Pose3) {
+public func simulatePoseEyeInHand(nPoses: Int, addNoise: Bool) -> ([Pose3], [Pose3], Pose3, Pose3) {
   // Adapted from simulateDataEyeInHand()
   // https://github.com/opencv/opencv/blob/master/modules/calib3d/test/test_calibration_hand_eye.cpp#L63
   // Notation: cam2Gripper means the transformation to move a pose in camera frame to gripper frame (gTc)
@@ -99,4 +101,72 @@ public func simulateDataEyeInHand(nPoses: Int, addNoise: Bool) -> ([Pose3], [Pos
   }
 
   return (gripper2Base, target2Cam, cam2Gripper, target2Base)
+}
+
+// MARK: - Simulated dataset from Koide
+
+/// Returns gripper2Base (`[Pose3]`), target2Cam ('[Pose3]'), cam2Gripper (`Pose3`), target2Base (`Pose3`)
+public func simulatePoseKoide() -> ([Pose3], [Pose3], Pose3, Pose3) {
+  let xRange = 1
+  let yRange = 1
+  let zRange = 1
+
+  let xStep = 0.5
+  let yStep = 0.5
+  let zStep = 0.25
+
+  let xOffset = 1.0
+  let yOffset = 0.0
+  let zOffset = 0.5
+
+  let wTo = Pose3(Rot3(), Vector3(1.0, 0.0, 0.0))
+  
+  var rng = SystemRandomNumberGenerator()
+  let rotDistribution = NormalDistribution<Double>(mean: 0.0, standardDeviation: 10.0 * .pi / 180.0)
+  let transDistribution = NormalDistribution<Double>(mean: 0.0, standardDeviation: 10.0 * .pi / 180.0)
+  let eTh = Pose3(Rot3.fromAngleAxis(
+      rotDistribution.next(using: &rng),
+      Vector3(
+        Double.random(in: -1.0...1.0),
+        Double.random(in: -1.0...1.0),
+        Double.random(in: -1.0...1.0))
+    ), transDistribution.next(using: &rng) * Vector3(
+      Double.random(in: -1.0...1.0),
+      Double.random(in: -1.0...1.0),
+      Double.random(in: -1.0...1.0))
+  )
+
+  var wThList: [Pose3] = []
+  var eToList: [Pose3] = []
+  for z in 0...zRange {
+    for y in -yRange...yRange {
+      for x in -xRange...xRange {
+        let wTe_t = Vector3(
+          xOffset + xStep * Double(x),
+          yOffset + yStep * Double(y),
+          zOffset + zStep * Double(z)
+        )
+
+        let rotInit = Rot3.fromAngleAxis(.pi, Vector3(0.0, 1.0, 0.0))
+        let zfrom = rotInit * Vector3(0.0, 0.0, 1.0)
+        var zto = (wTo.t - wTe_t)
+        zto = (1.0 / zto.norm) * zto
+        
+        let angle = acos(zfrom.dot(zto))
+        var axis = zto.cross(zfrom)
+        axis = (1.0 / axis.norm) * axis
+
+        let wTe = Pose3(Rot3.fromAngleAxis(angle, -axis) * rotInit, wTe_t)
+        let wTh = wTe * eTh
+        wThList.append(wTh)
+
+        let eTo = wTe.inverse() * wTo
+        eToList.append(eTo)
+
+        // TODO: add noise
+      }
+    }
+  }
+
+  return (wThList, eToList, eTh.inverse(), wTo)
 }
