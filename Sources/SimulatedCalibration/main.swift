@@ -28,34 +28,60 @@ func main() {
   }
 
   // Project points
-  let calibration = CameraCalibration(fx: 300.0, fy: 300.0, s: 0.0, u0: 320.0, v0: 240.0)
+  let cameraCalibration = CameraCalibration(fx: 300.0, fy: 300.0, s: 0.0, u0: 320.0, v0: 240.0)
   let imagePointsList = wThList.map { wTh -> [Vector2] in 
     let oTe = wTo.inverse() * wTh * hTe
-    let cam = PinholeCamera(oTe, calibration)
+    let cam = PinholeCamera(oTe, cameraCalibration)
     return objectPoints.map { op -> Vector2 in 
       cam.project(op)
     }
   }
+  
+  for i in 0..<wThList.count {
+    let imagePoints = imagePointsList[i]
+    let wTh = wThList[i]
 
-  // Add pose noise
-  wThList = applyNoise(wThList, 0.05, 1.0)
+    var x = VariableAssignments()
+    let camPoseId = x.store(Pose3(
+      Rot3(
+        -1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+        0.0, 0.0, -1.0), 
+      Vector3(0.0, 0.0, 1.0)))
 
-  print("Actual hand-to-eye: \(hTe)")
-  print("Actual world-to-object: \(wTo)")
+    var graph = FactorGraph()
 
-  print()
+    for j in 0..<imagePoints.count {
+      graph.store(CameraResectioningFactor(camPoseId, objectPoints[j], imagePoints[j], cameraCalibration))
+    }
 
-  let hTe_tsai = calibrateHandEye_tsai(worldToHand: wThList, eyeToObject: eToList)
-  print("Tsai's method")
-  print("Estimated hand-to-eye: \(hTe_tsai)")
-  printError(hTe_tsai)
+    var optimizer = LM(precision: 1e-6, max_iteration: 500)
+    try? optimizer.optimize(graph: graph, initial: &x)
 
-  print()
+    print(x[camPoseId])
+    print(wTo.inverse() * wTh * hTe)
+    print()
+  }
 
-  let (hTe_factorGraphPose, wTo_factorGraphPose) = calibrateHandEye_factorGraphPose(worldToHand: wThList, eyeToObject: eToList)
-  print("Factor graph, pose measurements")
-  print("Estimated hand-to-eye: \(hTe_factorGraphPose)")
-  printError(hTe_factorGraphPose)
+  // // Add pose noise
+  // wThList = applyNoise(wThList, 0.05, 1.0)
+
+  // print("Actual hand-to-eye: \(hTe)")
+  // print("Actual world-to-object: \(wTo)")
+
+  // print()
+
+  // let hTe_tsai = calibrateHandEye_tsai(worldToHand: wThList, eyeToObject: eToList)
+  // print("Tsai's method")
+  // print("Estimated hand-to-eye: \(hTe_tsai)")
+  // printError(hTe_tsai)
+
+  // print()
+
+  // let (hTe_factorGraphPose, wTo_factorGraphPose) = calibrateHandEye_factorGraphPose(worldToHand: wThList, eyeToObject: eToList)
+  // print("Factor graph, pose measurements")
+  // print("Estimated hand-to-eye: \(hTe_factorGraphPose)")
+  // printError(hTe_factorGraphPose)
 }
 
 main()
