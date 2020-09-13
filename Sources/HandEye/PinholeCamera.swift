@@ -42,12 +42,11 @@ public struct PinholeCamera: Differentiable {
   @differentiable
   public func project(_ point: Vector3) -> Vector2 {
     // Transform to camera coordinates
-    let q = pose.rot.inverse() * (point - pose.t)
+    let q = pose.inverse() * point
 
     // Project
-    let d = 1.0 / q.z
-    let u = q.x * d
-    let v = q.y * d
+    let u = q.x / q.z
+    let v = q.y / q.z
 
     // Run through the calibration
     let K = calibration

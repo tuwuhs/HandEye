@@ -1,5 +1,4 @@
 
-import HandEye
 import PenguinStructures
 import SwiftFusion
 
@@ -7,10 +6,10 @@ public struct CameraResectioningFactor: LinearizableFactor1 {
   public let edges: Variables.Indices
 
   /// Camera calibration
-  public let calibration: CameraCalibration
+  @noDerivative public let calibration: CameraCalibration
 
   /// 3D point on the target
-  public let objectPoint: Vector3
+  @noDerivative public let objectPoint: Vector3
 
   /// 2D point in the image
   public let imagePoint: Vector2
@@ -24,8 +23,10 @@ public struct CameraResectioningFactor: LinearizableFactor1 {
 
   @differentiable
   public func errorVector(_ pose: Pose3) -> Vector2 {
-    let camera = PinholeCamera(pose, calibration)
-    let reprojectionError = camera.project(objectPoint) - imagePoint
+    // pose is cTw, PinholeCamera takes wTc
+    let camera = PinholeCamera(pose.inverse(), calibration)
+    let reprojectionError = imagePoint - camera.project(objectPoint)
+    // print("CameraResectioningFactor", reprojectionError)
     return reprojectionError
   }
 }
