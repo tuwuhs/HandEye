@@ -117,7 +117,7 @@ public func simulatePoseKoide() -> ([Pose3], [Pose3], Pose3, Pose3) {
 
   let xOffset = 1.0
   let yOffset = 0.0
-  let zOffset = 0.75
+  let zOffset = 0.5
 
   let handToEyeTrans = 0.3
   let handToEyeRotDeg = 90.0

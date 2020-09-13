@@ -5,28 +5,54 @@ import SwiftFusion
 func main() {
   // let (gripper2Base, target2Cam, cam2Gripper, target2Base) = simulatePoseEyeInHand(nPoses: 10, addNoise: true)
   
-  var (gripper2Base, target2Cam, cam2Gripper, target2Base) = simulatePoseKoide()
-  gripper2Base = applyNoise(gripper2Base, 0.05, 1.0)
+  var (wThList, eToList, hTe, wTo) = simulatePoseKoide()
 
   let printError = { (handToEye: Pose3) in 
     print("Errors:")
-    print("rvec: \(handToEye.rot.toRvec() - cam2Gripper.rot.toRvec())")
-    print("tvec: \(handToEye.t - cam2Gripper.t)")
+    print("rvec: \(handToEye.rot.toRvec() - hTe.rot.toRvec())")
+    print("tvec: \(handToEye.t - hTe.t)")
   }
 
-  print("Actual hand-to-eye: \(cam2Gripper)")
-  print("Actual world-to-object: \(target2Base)")
+  // Create target object
+  let rows = 7
+  let cols = 5
+  let dimension = 0.1
+  var objectPoints: [Vector3] = []
+  for row in 0..<rows {
+    for col in 0..<cols {
+      objectPoints.append(dimension * Vector3(
+        Double(row) - Double(rows - 1) / 2.0, 
+        Double(col) - Double(cols - 1) / 2.0, 
+        0.0))
+    }
+  }
+
+  // Project points
+  let calibration = CameraCalibration(fx: 300.0, fy: 300.0, s: 0.0, u0: 320.0, v0: 240.0)
+  let imagePointsList = wThList.map { wTh -> [Vector2] in 
+    let oTe = wTo.inverse() * wTh * hTe
+    let cam = PinholeCamera(oTe, calibration)
+    return objectPoints.map { op -> Vector2 in 
+      cam.project(op)
+    }
+  }
+
+  // Add pose noise
+  wThList = applyNoise(wThList, 0.05, 1.0)
+
+  print("Actual hand-to-eye: \(hTe)")
+  print("Actual world-to-object: \(wTo)")
 
   print()
 
-  let hTe_tsai = calibrateHandEye_tsai(worldToHand: gripper2Base, eyeToObject: target2Cam)
+  let hTe_tsai = calibrateHandEye_tsai(worldToHand: wThList, eyeToObject: eToList)
   print("Tsai's method")
   print("Estimated hand-to-eye: \(hTe_tsai)")
   printError(hTe_tsai)
 
   print()
 
-  let (hTe_factorGraphPose, wTo_factorGraphPose) = calibrateHandEye_factorGraphPose(worldToHand: gripper2Base, eyeToObject: target2Cam)
+  let (hTe_factorGraphPose, wTo_factorGraphPose) = calibrateHandEye_factorGraphPose(worldToHand: wThList, eyeToObject: eToList)
   print("Factor graph, pose measurements")
   print("Estimated hand-to-eye: \(hTe_factorGraphPose)")
   printError(hTe_factorGraphPose)

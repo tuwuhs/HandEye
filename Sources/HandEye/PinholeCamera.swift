@@ -30,6 +30,11 @@ public struct PinholeCamera: Differentiable {
     self.calibration = calibration
   }
 
+  public init(_ calibration: CameraCalibration) {
+    self.pose = Pose3()
+    self.calibration = calibration
+  }
+
   public init() {
     self.init(Pose3(), CameraCalibration())
   }
