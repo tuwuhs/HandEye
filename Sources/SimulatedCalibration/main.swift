@@ -3,7 +3,7 @@ import HandEye
 import SwiftFusion
 
 func main() {
-  // let (gripper2Base, target2Cam, cam2Gripper, target2Base) = simulatePoseEyeInHand(nPoses: 10, addNoise: true)
+  // let (wThList, eToList, hTe, wTo) = simulatePoseEyeInHand(nPoses: 10, addNoise: true)
   
   var (wThList, eToList, hTe, wTo) = simulatePoseKoide()
 
@@ -37,6 +37,7 @@ func main() {
     }
   }
   
+  // // Try camera resectioning
   // for i in 0..<wThList.count {
   //   let imagePoints = imagePointsList[i]
   //   let wTh = wThList[i]
@@ -61,41 +62,39 @@ func main() {
   //   print(x[camPoseId])
   //   print((wTo.inverse() * wTh * hTe).inverse())
   //   print()
-  //   // break
   // }
 
-  let (hTe_fgImagePoints, wTo_fgImagePoints) = calibrateHandEye_factorGraphImagePoints(
-    worldToHand: wThList, 
-    imagePointsList: imagePointsList, 
-    objectPoints: objectPoints, 
-    cameraCalibration: cameraCalibration,
-    handToEyeEstimate: hTe,
-    worldToObjectEstimate: wTo)
+  // let (hTe_fgImagePoints, wTo_fgImagePoints) = calibrateHandEye_factorGraphImagePoints(
+  //   worldToHand: wThList, 
+  //   imagePointsList: imagePointsList, 
+  //   objectPoints: objectPoints, 
+  //   cameraCalibration: cameraCalibration,
+  //   handToEyeEstimate: hTe,
+  //   worldToObjectEstimate: wTo)
 
-  print("Factor graph, pose measurements")
-  print("Estimated hand-to-eye: \(hTe_fgImagePoints)")
-  print("Estimated world-to-object: \(wTo_fgImagePoints)")
-  printError(hTe_fgImagePoints)
+  // print("Factor graph, pose measurements")
+  // print("Estimated hand-to-eye: \(hTe_fgImagePoints)")
+  // print("Estimated world-to-object: \(wTo_fgImagePoints)")
+  // printError(hTe_fgImagePoints)
 
   print("Actual hand-to-eye: \(hTe)")
   print("Actual world-to-object: \(wTo)")
+  print()
 
-  // print()
+  // Add pose noise
+  wThList = applyNoise(wThList, 0.05, 1.0)
 
-  // // Add pose noise
-  // wThList = applyNoise(wThList, 0.05, 1.0)
+  let hTe_tsai = calibrateHandEye_tsai(worldToHand: wThList, eyeToObject: eToList)
+  print("Tsai's method")
+  print("Estimated hand-to-eye: \(hTe_tsai)")
+  printError(hTe_tsai)
 
-  // let hTe_tsai = calibrateHandEye_tsai(worldToHand: wThList, eyeToObject: eToList)
-  // print("Tsai's method")
-  // print("Estimated hand-to-eye: \(hTe_tsai)")
-  // printError(hTe_tsai)
+  print()
 
-  // print()
-
-  // let (hTe_factorGraphPose, wTo_factorGraphPose) = calibrateHandEye_factorGraphPose(worldToHand: wThList, eyeToObject: eToList)
-  // print("Factor graph, pose measurements")
-  // print("Estimated hand-to-eye: \(hTe_factorGraphPose)")
-  // printError(hTe_factorGraphPose)
+  let (hTe_factorGraphPose, wTo_factorGraphPose) = calibrateHandEye_factorGraphPose(worldToHand: wThList, eyeToObject: eToList)
+  print("Factor graph, pose measurements")
+  print("Estimated hand-to-eye: \(hTe_factorGraphPose)")
+  printError(hTe_factorGraphPose)
 }
 
 main()
