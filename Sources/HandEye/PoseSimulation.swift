@@ -131,11 +131,11 @@ public func simulatePoseKoide() -> ([Pose3], [Pose3], Pose3, Pose3) {
     rotDistribution.next(using: &rng), Vector3(
       Double.random(in: -1.0...1.0),
       Double.random(in: -1.0...1.0),
-      Double.random(in: -1.0...1.0))), 
+      Double.random(in: -1.0...1.0)).normalized()), 
     transDistribution.next(using: &rng) * Vector3(
       Double.random(in: -1.0...1.0),
       Double.random(in: -1.0...1.0),
-      Double.random(in: -1.0...1.0))
+      Double.random(in: -1.0...1.0)).normalized()
   )
 
   var wThList: [Pose3] = []
@@ -151,12 +151,10 @@ public func simulatePoseKoide() -> ([Pose3], [Pose3], Pose3, Pose3) {
 
         let rotInit = Rot3.fromAngleAxis(.pi, Vector3(0.0, 1.0, 0.0))
         let zfrom = rotInit * Vector3(0.0, 0.0, 1.0)
-        var zto = (wTo.t - wTe_t)
-        zto = (1.0 / zto.norm) * zto
+        let zto = (wTo.t - wTe_t).normalized()
         
         let angle = acos(zfrom.dot(zto))
-        var axis = zto.cross(zfrom)
-        axis = (1.0 / axis.norm) * axis
+        let axis = zto.cross(zfrom).normalized()
 
         let wTe = Pose3(Rot3.fromAngleAxis(angle, -axis) * rotInit, wTe_t)
         let wTh = wTe * eTh
@@ -180,11 +178,11 @@ public func applyNoise(_ poses: [Pose3], _ stdevTrans: Double, _ stdevRotDeg: Do
       rnoise.next(using: &rng), Vector3(
         Double.random(in: -1.0...1.0),
         Double.random(in: -1.0...1.0),
-        Double.random(in: -1.0...1.0))), 
+        Double.random(in: -1.0...1.0)).normalized()), 
       tnoise.next(using: &rng) * Vector3(
         Double.random(in: -1.0...1.0),
         Double.random(in: -1.0...1.0),
-        Double.random(in: -1.0...1.0))
+        Double.random(in: -1.0...1.0)).normalized()
     )
     return noise * p
   }
