@@ -48,6 +48,10 @@ public struct PinholeCamera: Differentiable {
     let u = q.x / q.z
     let v = q.y / q.z
 
+    if q.z <= 0.0 {
+      print("Chirality: z less than zero!")
+    }
+
     // Run through the calibration
     let K = calibration
     return Vector2(
