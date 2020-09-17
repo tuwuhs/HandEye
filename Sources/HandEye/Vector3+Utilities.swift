@@ -22,3 +22,13 @@ extension Vector3 {
     ])
   }
 }
+
+extension Vector {
+  public mutating func normalize() {
+    self = self.normalized()
+  }
+
+  public func normalized() -> Self {
+    (1.0 / self.norm) * self
+  }
+}
