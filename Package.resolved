@@ -11,6 +11,15 @@
         }
       },
       {
+        "package": "swift-argument-parser",
+        "repositoryURL": "https://github.com/apple/swift-argument-parser",
+        "state": {
+          "branch": null,
+          "revision": "92646c0cdbaca076c8d3d0207891785b3379cbff",
+          "version": "0.3.1"
+        }
+      },
+      {
         "package": "Benchmark",
         "repositoryURL": "https://github.com/google/swift-benchmark.git",
         "state": {
@@ -42,7 +51,7 @@
         "repositoryURL": "https://github.com/tuwuhs/SwiftFusion.git",
         "state": {
           "branch": "dev-handeye",
-          "revision": "4af6becb9ac6f51fa7ffc96e657824ac4e2023c4",
+          "revision": "5eef7be3eece5a5c9b508077b74c5f0ea8ba46c5",
           "version": null
         }
       },

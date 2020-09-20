@@ -14,6 +14,7 @@ let package = Package(
   dependencies: [
     // Dependencies declare other packages that this package depends on.
     // .package(url: /* package url */, from: "1.0.0"),
+    .package(name: "Benchmark", url: "https://github.com/google/swift-benchmark.git", .branch("master")),
     .package(url: "https://github.com/tuwuhs/SwiftFusion.git", .branch("dev-handeye")),
   ],
   targets: [
@@ -22,16 +23,21 @@ let package = Package(
     .target(
       name: "HandEye",
       dependencies: [
-          .product(name: "SwiftFusion", package: "SwiftFusion"),
+        .product(name: "SwiftFusion", package: "SwiftFusion"),
       ]),
     .target(
       name: "CameraResectioning",
-      dependencies: ["HandEye"]
-    ),
+      dependencies: ["HandEye"]),
     .target(
       name: "SimulatedCalibration",
-      dependencies: ["HandEye"]
-    ),
+      dependencies: ["HandEye"]),
+    .target(
+      name: "HandEyeBenchmark",
+      dependencies: [
+        "HandEye",
+        "Benchmark",
+        "SwiftFusion",
+      ]),
     .testTarget(
       name: "HandEyeTests",
       dependencies: ["HandEye"]),

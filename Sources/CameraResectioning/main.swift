@@ -15,6 +15,7 @@ func main() {
     Vector3(1.0, 1.0, 1.0)))
 
   var graph = FactorGraph()
+
   graph.store(CameraResectioningFactor(camPoseId, Vector3(10.0, 10.0, 0.0), Vector2(55, 45), K))
   graph.store(CameraResectioningFactor(camPoseId, Vector3(-10.0, 10.0, 0.0), Vector2(45, 45), K))
   graph.store(CameraResectioningFactor(camPoseId, Vector3(-10.0, -10.0, 0.0), Vector2(45, 55), K))

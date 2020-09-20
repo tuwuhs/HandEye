@@ -62,6 +62,8 @@ func main() {
     print(x[camPoseId])
     print((wTo.inverse() * wTh * hTe))
     print()
+
+    break;
   }
 
   // let (hTe_fgImagePoints, wTo_fgImagePoints) = calibrateHandEye_factorGraphImagePoints(
