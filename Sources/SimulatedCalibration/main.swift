@@ -81,7 +81,7 @@ func main() {
     // try? optimizer.optimize(graph: graph, initial: &x)
 
     print(x[camPoseId])
-    print((wTo.inverse() * wTh * hTe))
+    print((wTo.inverse() * wTh * hTe).inverse())
     print()
 
     break;
