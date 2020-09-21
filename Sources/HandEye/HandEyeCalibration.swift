@@ -169,13 +169,13 @@ public func calibrateHandEye_factorGraphImagePoints(
     let imagePoints = imagePointsList[i]
     assert(imagePoints.count == objectPoints.count)
 
-    // let eyeToObjectID = x.store(eyeToObjectEstimates[i])
-    let eyeToObjectID = x.store(Pose3(
-      Rot3(
-        1.0, 0.0, 0.0,
-        0.0, -1.0, 0.0,
-        0.0, 0.0, -1.0), 
-      Vector3(0.0, 0.0, 1.0)))
+    let eyeToObjectID = x.store(eyeToObjectEstimates[i])
+    // let eyeToObjectID = x.store(Pose3(
+    //   Rot3(
+    //     -1.0, 0.0, 0.0,
+    //     0.0, 1.0, 0.0,
+    //     0.0, 0.0, -1.0), 
+    //   Vector3(-0.1, -0.1, 0.1)))
     eyeToObjectIDList.append(eyeToObjectID)
 
     graph.store(HandEyePoseFactor(handToEyeID, worldToObjectID, eyeToObjectID, worldToHand[i]))
@@ -184,16 +184,18 @@ public func calibrateHandEye_factorGraphImagePoints(
     }
   }
 
-  // var opt = LM(precision: 1e-6, max_iteration: 100)
-  // try? opt.optimize(graph: graph, initial: &x)
+  var opt = LM(precision: 1e-6, max_iteration: 200)
+  // opt.verbosity = .TRYLAMBDA
+  opt.max_inner_iteration = 120
+  try? opt.optimize(graph: graph, initial: &x)
 
-  for _ in 0..<20 {
-    let gfg = graph.linearized(at: x)
-    var dx = x.tangentVectorZeros
-    var opt = GenericCGLS(precision: 1e-6, max_iteration: 400)
-    opt.optimize(gfg: gfg, initial: &dx)
-    x.move(along: dx)
-  }
+  // for _ in 0..<100 {
+  //   let gfg = graph.linearized(at: x)
+  //   var dx = x.tangentVectorZeros
+  //   var opt = GenericCGLS(precision: 0, max_iteration: 120)
+  //   opt.optimize(gfg: gfg, initial: &dx)
+  //   x.move(along: dx)
+  // }
 
   // Error vectors
   // print(cam2Gripper.localCoordinate(x[handToEyeID]))

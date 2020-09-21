@@ -39,85 +39,88 @@ func main() {
   }
   
   // Try camera resectioning
-  for i in 0..<wThList.count {
-    let imagePoints = imagePointsList[i]
-    let wTh = wThList[i]
+  // for i in 0..<wThList.count {
+  //   let imagePoints = imagePointsList[i]
+  //   let wTh = wThList[i]
 
-    var x = VariableAssignments()
-    let camPoseId = x.store(Pose3(
-      Rot3(
-        -1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 0.0, -1.0), 
-      Vector3(-0.1, -0.1, 0.1)))
+  //   var x = VariableAssignments()
+  //   let camPoseId = x.store(Pose3(
+  //     Rot3(
+  //       -1.0, 0.0, 0.0,
+  //       0.0, 1.0, 0.0,
+  //       0.0, 0.0, -1.0), 
+  //     Vector3(-0.1, -0.1, 0.1)))
 
-    var graph = FactorGraph()
+  //   var graph = FactorGraph()
 
-    for j in 0..<imagePoints.count {
-      graph.store(CameraResectioningFactor(camPoseId, objectPoints[j], imagePoints[j], cameraCalibration))
-    }
+  //   for j in 0..<imagePoints.count {
+  //     graph.store(CameraResectioningFactor(camPoseId, objectPoints[j], imagePoints[j], cameraCalibration))
+  //   }
 
-    var timestamps: [DispatchTime] = []
-    let start = DispatchTime.now()
-    for _ in 0..<10 {
-      timestamps.append(DispatchTime.now())
-      let linearized = graph.linearized(at: x)
-      timestamps.append(DispatchTime.now())
-      var dx = x.tangentVectorZeros
-      timestamps.append(DispatchTime.now())
-      var optimizer = GenericCGLS(precision: 0, max_iteration: 6)
-      timestamps.append(DispatchTime.now())
-      optimizer.optimize(gfg: linearized, initial: &dx)
-      timestamps.append(DispatchTime.now())
-      x.move(along: dx)
-    }
+  //   // var timestamps: [DispatchTime] = []
+  //   // let start = DispatchTime.now()
+  //   // for _ in 0..<10 {
+  //   //   timestamps.append(DispatchTime.now())
+  //   //   let linearized = graph.linearized(at: x)
+  //   //   timestamps.append(DispatchTime.now())
+  //   //   var dx = x.tangentVectorZeros
+  //   //   timestamps.append(DispatchTime.now())
+  //   //   var optimizer = GenericCGLS(precision: 0, max_iteration: 6)
+  //   //   timestamps.append(DispatchTime.now())
+  //   //   optimizer.optimize(gfg: linearized, initial: &dx)
+  //   //   timestamps.append(DispatchTime.now())
+  //   //   x.move(along: dx)
+  //   // }
 
-    for (ts1, ts2) in zip(timestamps[0..<timestamps.count-1], timestamps[1...]) {
-      let timeInterval = ts2.uptimeNanoseconds - ts1.uptimeNanoseconds
-      print(timeInterval)
-    }
+  //   // for (ts1, ts2) in zip(timestamps[0..<timestamps.count-1], timestamps[1...]) {
+  //   //   let timeInterval = ts2.uptimeNanoseconds - ts1.uptimeNanoseconds
+  //   //   print(timeInterval)
+  //   // }
 
-    // var optimizer = LM(precision: 1e-5, max_iteration: 100)
-    // try? optimizer.optimize(graph: graph, initial: &x)
+  //   var optimizer = LM(precision: 1e-5, max_iteration: 100)
+  //   try? optimizer.optimize(graph: graph, initial: &x)
 
-    print(x[camPoseId])
-    print((wTo.inverse() * wTh * hTe).inverse())
-    print()
+  //   print(x[camPoseId])
+  //   print((wTo.inverse() * wTh * hTe).inverse())
+  //   print()
 
-    break;
-  }
+  //   // break;
+  // }
 
-  // let (hTe_fgImagePoints, wTo_fgImagePoints) = calibrateHandEye_factorGraphImagePoints(
-  //   worldToHand: wThList, 
-  //   imagePointsList: imagePointsList, 
-  //   objectPoints: objectPoints, 
-  //   cameraCalibration: cameraCalibration,
-  //   handToEyeEstimate: hTe,
-  //   worldToObjectEstimate: wTo)
+  // Add pose noise
+  wThList = applyNoise(wThList, 0.1, 1.0)
 
-  // print("Factor graph, pose measurements")
-  // print("Estimated hand-to-eye: \(hTe_fgImagePoints)")
-  // print("Estimated world-to-object: \(wTo_fgImagePoints)")
-  // printError(hTe_fgImagePoints)
+  print("Actual hand-to-eye: \(hTe)")
+  print("Actual world-to-object: \(wTo)")
+  print()
 
-  // print("Actual hand-to-eye: \(hTe)")
-  // print("Actual world-to-object: \(wTo)")
-  // print()
+  let hTe_tsai = calibrateHandEye_tsai(worldToHand: wThList, eyeToObject: eToList)
+  let wTo_tsai = wThList[0] * hTe_tsai * eToList[0]
+  print("Tsai's method")
+  print("Estimated hand-to-eye: \(hTe_tsai)")
+  printError(hTe_tsai)
+  print()
 
-  // // Add pose noise
-  // wThList = applyNoise(wThList, 0.05, 1.0)
+  let (hTe_factorGraphPose, wTo_factorGraphPose) = calibrateHandEye_factorGraphPose(worldToHand: wThList, eyeToObject: eToList)
+  print("Factor graph, pose measurements")
+  print("Estimated hand-to-eye: \(hTe_factorGraphPose)")
+  print("Estimated world-to-object: \(wTo_factorGraphPose)")
+  printError(hTe_factorGraphPose)
+  print()
 
-  // let hTe_tsai = calibrateHandEye_tsai(worldToHand: wThList, eyeToObject: eToList)
-  // print("Tsai's method")
-  // print("Estimated hand-to-eye: \(hTe_tsai)")
-  // printError(hTe_tsai)
+  let (hTe_fgImagePoints, wTo_fgImagePoints) = calibrateHandEye_factorGraphImagePoints(
+    worldToHand: wThList, 
+    imagePointsList: imagePointsList, 
+    objectPoints: objectPoints, 
+    cameraCalibration: cameraCalibration,
+    handToEyeEstimate: hTe_tsai,
+    worldToObjectEstimate: wTo_tsai)
 
-  // print()
-
-  // let (hTe_factorGraphPose, wTo_factorGraphPose) = calibrateHandEye_factorGraphPose(worldToHand: wThList, eyeToObject: eToList)
-  // print("Factor graph, pose measurements")
-  // print("Estimated hand-to-eye: \(hTe_factorGraphPose)")
-  // printError(hTe_factorGraphPose)
+  print("Factor graph, image point measurements")
+  print("Estimated hand-to-eye: \(hTe_fgImagePoints)")
+  print("Estimated world-to-object: \(wTo_fgImagePoints)")
+  printError(hTe_fgImagePoints)
+  print()
 }
 
 main()

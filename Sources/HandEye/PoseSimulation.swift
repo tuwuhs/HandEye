@@ -119,10 +119,10 @@ public func simulatePoseKoide() -> ([Pose3], [Pose3], Pose3, Pose3) {
   let yOffset = 0.0
   let zOffset = 0.5
 
-  let handToEyeTrans = 0.3
+  let handToEyeTrans = 0.5
   let handToEyeRotDeg = 90.0
 
-  let wTo = Pose3(Rot3(), Vector3(1.0, 0.0, 0.0))
+  let wTo = Pose3(Rot3(), Vector3(2.0, 1.0, 0.0))
   
   var rng = SystemRandomNumberGenerator()
   let rotDistribution = NormalDistribution<Double>(mean: 0.0, standardDeviation: handToEyeRotDeg * .pi / 180.0)

@@ -45,7 +45,7 @@ public struct PinholeCamera: Differentiable {
     let q = pose.inverse() * point
 
     if q.z <= 0.0 {
-      print("Chirality: z less than zero!")
+      // print("Chirality: z less than zero!")
     }
 
     // Project
