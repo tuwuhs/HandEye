@@ -7,7 +7,9 @@ func main() {
   // let (wThList, eToList, hTe, wTo) = simulatePoseEyeInHand(nPoses: 10, addNoise: true)
   
   var (wThList, eToList, hTe, wTo) = simulatePoseKoide()
-
+  // wThList = [wThList[1], wThList[5], wThList[12]]
+  // eToList = [eToList[1], eToList[5], eToList[12]]
+  
   let printError = { (handToEye: Pose3) in 
     print("Errors:")
     print("rvec: \(handToEye.rot.toRvec() - hTe.rot.toRvec())")
@@ -15,9 +17,9 @@ func main() {
   }
 
   // Create target object
-  let rows = 7
-  let cols = 5
-  let dimension = 0.1
+  let rows = 2
+  let cols = 2
+  let dimension = 0.5
   var objectPoints: [Vector3] = []
   for row in 0..<rows {
     for col in 0..<cols {
@@ -33,12 +35,17 @@ func main() {
   let imagePointsList = wThList.map { wTh -> [Vector2] in 
     let oTe = wTo.inverse() * wTh * hTe
     let cam = PinholeCamera(oTe, cameraCalibration)
+    print(oTe.t)
     return objectPoints.map { op -> Vector2 in 
-      cam.project(op)
+      let p = cam.project(op)
+      // print(oTe.t, op, p)
+      return p
     }
   }
+  assert(imagePointsList.allSatisfy { $0.allSatisfy { $0.x >= 0 && $0.x < 640 && $0.y >= 0 && $0.y < 480 } },
+    "Some image points fall outside the image boundary")
   
-  // Try camera resectioning
+  // // Try camera resectioning
   // for i in 0..<wThList.count {
   //   let imagePoints = imagePointsList[i]
   //   let wTh = wThList[i]
@@ -88,7 +95,7 @@ func main() {
   // }
 
   // Add pose noise
-  wThList = applyNoise(wThList, 0.1, 1.0)
+  // wThList = applyNoise(wThList, 0.1, 1.0)
 
   print("Actual hand-to-eye: \(hTe)")
   print("Actual world-to-object: \(wTo)")
@@ -113,8 +120,8 @@ func main() {
     imagePointsList: imagePointsList, 
     objectPoints: objectPoints, 
     cameraCalibration: cameraCalibration,
-    handToEyeEstimate: hTe_tsai,
-    worldToObjectEstimate: wTo_tsai)
+    handToEyeEstimate: Pose3(),
+    worldToObjectEstimate: Pose3())
 
   print("Factor graph, image point measurements")
   print("Estimated hand-to-eye: \(hTe_fgImagePoints)")

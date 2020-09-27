@@ -114,7 +114,8 @@ public func calibrateHandEye_factorGraphPose(worldToHand: [Pose3], eyeToObject: 
   //   x.move(along: dx)
   // }
 
-  var opt = LM(precision: 1e-6, max_iteration: 500)
+  var opt = LM(precision: 1e-6, max_iteration: 400)
+  // opt.max_inner_iteration = 40
   try? opt.optimize(graph: graph, initial: &x)
 
   // Error vectors
@@ -184,18 +185,99 @@ public func calibrateHandEye_factorGraphImagePoints(
     }
   }
 
-  var opt = LM(precision: 1e-6, max_iteration: 200)
-  // opt.verbosity = .TRYLAMBDA
-  opt.max_inner_iteration = 120
-  try? opt.optimize(graph: graph, initial: &x)
+  // var opt = LM(precision: 1e-6, max_iteration: 200)
+  // // opt.verbosity = .TRYLAMBDA
+  // opt.max_inner_iteration = 120
+  // try? opt.optimize(graph: graph, initial: &x)
 
-  // for _ in 0..<100 {
-  //   let gfg = graph.linearized(at: x)
-  //   var dx = x.tangentVectorZeros
-  //   var opt = GenericCGLS(precision: 0, max_iteration: 120)
-  //   opt.optimize(gfg: gfg, initial: &dx)
-  //   x.move(along: dx)
-  // }
+  for _ in 0..<120 {
+    let gfg = graph.linearized(at: x)
+    var dx = x.tangentVectorZeros
+    var opt = GenericCGLS(precision: 0, max_iteration: 120)
+    opt.optimize(gfg: gfg, initial: &dx)
+    x.move(along: dx)
+  }
+
+  // Error vectors
+  // print(cam2Gripper.localCoordinate(x[handToEyeID]))
+  // print(target2Base.localCoordinate(x[worldToObjectID]))
+
+  return (x[handToEyeID], x[worldToObjectID])
+}
+
+// MARK: - 
+
+// Assumes wTo = I
+public struct HandEyePoseNoObjectFactor<Pose: LieGroup>: LinearizableFactor2 {
+  public let edges: Variables.Indices
+  public let worldToHand: Pose
+  
+  public init (_ handToEyeID: TypedID<Pose>, _ eyeToObjectID: TypedID<Pose>, _ worldToHand: Pose) {
+    self.edges = Tuple2(handToEyeID, eyeToObjectID)
+    self.worldToHand = worldToHand
+  }
+
+  @differentiable
+  public func errorVector(_ handToEye: Pose, _ eyeToObject: Pose) -> Pose.TangentVector {
+    let error = worldToHand.localCoordinate(eyeToObject.inverse() * handToEye.inverse())
+    // print("HandEyePoseFactor", error)
+    return error
+  }
+}
+
+/// Returns the estimated handToEye and worldToObject transformations
+public func calibrateHandEye_factorGraphImagePointsNoObject(
+  worldToHand: [Pose3], 
+  imagePointsList: [[Vector2]], 
+  objectPoints: [Vector3], 
+  cameraCalibration: CameraCalibration,
+  handToEyeEstimate: Pose3,
+  worldToObjectEstimate: Pose3) 
+  -> (Pose3, Pose3) {
+  assert(worldToHand.count == imagePointsList.count)
+  
+  let nPoses = worldToHand.count
+
+  var x = VariableAssignments()
+  let handToEyeID = x.store(handToEyeEstimate)
+  let worldToObjectID = x.store(worldToObjectEstimate)
+
+  var graph = FactorGraph()
+  var eyeToObjectIDList: [TypedID<Pose3>] = []
+  let eyeToObjectEstimates = worldToHand.map { wTh -> Pose3 in
+    handToEyeEstimate.inverse() * wTh.inverse() * worldToObjectEstimate
+  }
+  for i in 0..<nPoses {
+    let imagePoints = imagePointsList[i]
+    assert(imagePoints.count == objectPoints.count)
+
+    let eyeToObjectID = x.store(eyeToObjectEstimates[i])
+    // let eyeToObjectID = x.store(Pose3(
+    //   Rot3(
+    //     -1.0, 0.0, 0.0,
+    //     0.0, 1.0, 0.0,
+    //     0.0, 0.0, -1.0), 
+    //   Vector3(-0.1, -0.1, 0.1)))
+    eyeToObjectIDList.append(eyeToObjectID)
+
+    graph.store(HandEyePoseNoObjectFactor(handToEyeID, eyeToObjectID, worldToHand[i]))
+    for j in 0..<imagePoints.count {
+      graph.store(CameraResectioningFactor(eyeToObjectID, objectPoints[j], imagePoints[j], cameraCalibration))
+    }
+  }
+
+  // var opt = LM(precision: 1e-6, max_iteration: 100)
+  // opt.verbosity = .TRYLAMBDA
+  // opt.max_inner_iteration = 120
+  // try? opt.optimize(graph: graph, initial: &x)
+
+  for _ in 0..<120 {
+    let gfg = graph.linearized(at: x)
+    var dx = x.tangentVectorZeros
+    var opt = GenericCGLS(precision: 0 /*1e-16*/, max_iteration: 120)
+    opt.optimize(gfg: gfg, initial: &dx)
+    x.move(along: dx)
+  }
 
   // Error vectors
   // print(cam2Gripper.localCoordinate(x[handToEyeID]))
