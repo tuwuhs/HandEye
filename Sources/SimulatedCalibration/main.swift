@@ -16,6 +16,11 @@ func main() {
     print("tvec: \(handToEye.t - hTe.t)")
   }
 
+  let printErrorMagnitude = { (handToEye: Pose3) in 
+    print("rvec: \((handToEye.rot.toRvec() - hTe.rot.toRvec()).norm)")
+    print("tvec: \((handToEye.t - hTe.t).norm)")
+  }
+
   // Create target object
   let rows = 3
   let cols = 3
@@ -35,7 +40,7 @@ func main() {
   let imagePointsList = wThList.map { wTh -> [Vector2] in 
     let oTe = wTo.inverse() * wTh * hTe
     let cam = PinholeCamera(oTe, cameraCalibration)
-    print(oTe.t)
+    // print(oTe.t)
     return objectPoints.map { op -> Vector2 in 
       let p = cam.project(op)
       // print(oTe.t, op, p)
@@ -95,38 +100,43 @@ func main() {
   // }
 
   // Add pose noise
-  // wThList = applyNoise(wThList, 0.05, 0.5)
+  wThList = applyNoise(wThList, 0.05, 0.5)
 
-  print("Actual hand-to-eye: \(hTe)")
-  print("Actual world-to-object: \(wTo)")
-  print()
+  // print("Actual hand-to-eye: \(hTe)")
+  // print("Actual world-to-object: \(wTo)")
+  // print()
 
   let hTe_tsai = calibrateHandEye_tsai(worldToHand: wThList, eyeToObject: eToList)
   let wTo_tsai = wThList[0] * hTe_tsai * eToList[0]
-  print("Tsai's method")
-  print("Estimated hand-to-eye: \(hTe_tsai)")
-  printError(hTe_tsai)
-  print()
+  // print("Tsai's method")
+  // print("Estimated hand-to-eye: \(hTe_tsai)")
+  // printError(hTe_tsai)
+  printErrorMagnitude(hTe_tsai)
+  // print()
 
   let (hTe_factorGraphPose, wTo_factorGraphPose) = calibrateHandEye_factorGraphPose(worldToHand: wThList, eyeToObject: eToList)
-  print("Factor graph, pose measurements")
-  print("Estimated hand-to-eye: \(hTe_factorGraphPose)")
-  print("Estimated world-to-object: \(wTo_factorGraphPose)")
-  printError(hTe_factorGraphPose)
-  print()
+  // print("Factor graph, pose measurements")
+  // print("Estimated hand-to-eye: \(hTe_factorGraphPose)")
+  // print("Estimated world-to-object: \(wTo_factorGraphPose)")
+  // printError(hTe_factorGraphPose)
+  printErrorMagnitude(hTe_factorGraphPose)
+  // print()
 
   let (hTe_fgImagePoints, wTo_fgImagePoints) = calibrateHandEye_factorGraphImagePoints(
     worldToHand: wThList, 
     imagePointsList: imagePointsList, 
     objectPoints: objectPoints, 
     cameraCalibration: cameraCalibration,
-    handToEyeEstimate: Pose3(),
-    worldToObjectEstimate: Pose3())
+    handToEyeEstimate: hTe_tsai,
+    worldToObjectEstimate: wTo_tsai)
 
-  print("Factor graph, image point measurements")
-  print("Estimated hand-to-eye: \(hTe_fgImagePoints)")
-  print("Estimated world-to-object: \(wTo_fgImagePoints)")
-  printError(hTe_fgImagePoints)
+  // print("Factor graph, image point measurements")
+  // print("Estimated hand-to-eye: \(hTe_fgImagePoints)")
+  // print("Estimated world-to-object: \(wTo_fgImagePoints)")
+  // printError(hTe_fgImagePoints)
+  printErrorMagnitude(hTe_fgImagePoints)
+  // print()
+
   print()
 }
 
