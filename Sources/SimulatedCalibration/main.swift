@@ -17,9 +17,9 @@ func main() {
   }
 
   // Create target object
-  let rows = 2
-  let cols = 2
-  let dimension = 0.5
+  let rows = 3
+  let cols = 3
+  let dimension = 0.20
   var objectPoints: [Vector3] = []
   for row in 0..<rows {
     for col in 0..<cols {
@@ -95,7 +95,7 @@ func main() {
   // }
 
   // Add pose noise
-  // wThList = applyNoise(wThList, 0.1, 1.0)
+  // wThList = applyNoise(wThList, 0.05, 0.5)
 
   print("Actual hand-to-eye: \(hTe)")
   print("Actual world-to-object: \(wTo)")
