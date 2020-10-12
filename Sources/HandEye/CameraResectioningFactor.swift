@@ -25,8 +25,9 @@ public struct CameraResectioningFactor: LinearizableFactor1 {
   public func errorVector(_ pose: Pose3) -> Vector2 {
     // pose is eTo, PinholeCamera takes oTe
     let camera = PinholeCamera(pose.inverse(), calibration)
-    let reprojectionError = camera.project(objectPoint) - imagePoint
-    // print("CameraResectioningFactor", reprojectionError)
+    let projectedImagePoint = camera.project(objectPoint)
+    let reprojectionError = projectedImagePoint - imagePoint
+    // print("CameraResectioningFactor", objectPoint, projectedImagePoint, imagePoint, reprojectionError)
     return reprojectionError
   }
 }
