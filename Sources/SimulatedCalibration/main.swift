@@ -51,22 +51,18 @@ func main() {
     "Some image points fall outside the image boundary")
   
   // Try camera resectioning
+  var graph = FactorGraph()
+  var x = VariableAssignments()
+  let camCalibrationId = x.store(CameraCalibrationManifold())
+
   for i in 0..<wThList.count {
     let imagePoints = imagePointsList[i]
     let wTh = wThList[i]
 
-    var x = VariableAssignments()
-    let camPoseId = x.store(Pose3(
-      Rot3(
-        -1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 0.0, -1.0), 
-      Vector3(-0.1, -0.1, 0.1)))
-
-    var graph = FactorGraph()
+    let camPoseId = x.store((wTo.inverse() * wTh * hTe).inverse())
 
     for j in 0..<imagePoints.count {
-      graph.store(CameraResectioningFactor(camPoseId, objectPoints[j], imagePoints[j], cameraCalibration))
+      graph.store(CameraCalibrationFactor(camPoseId, camCalibrationId, objectPoints[j], imagePoints[j]))
     }
 
     // var timestamps: [DispatchTime] = []
@@ -89,15 +85,19 @@ func main() {
     //   print(timeInterval)
     // }
 
-    var optimizer = LM(precision: 1e-5, max_iteration: 100)
-    try? optimizer.optimize(graph: graph, initial: &x)
+    // var optimizer = LM(precision: 1e-5, max_iteration: 100)
+    // try? optimizer.optimize(graph: graph, initial: &x)
 
-    print(x[camPoseId])
-    print((wTo.inverse() * wTh * hTe).inverse())
-    print()
+    // print(x[camPoseId])
+    // print((wTo.inverse() * wTh * hTe).inverse())
+    // print()
 
     // break;
   }
+
+  var optimizer = LM(precision: 1e-5, max_iteration: 100)
+  try? optimizer.optimize(graph: graph, initial: &x)
+  print(x[camCalibrationId])
 
   // // Add pose noise
   // wThList = applyNoise(wThList, 0.05, 0.5)

@@ -31,3 +31,29 @@ public struct CameraResectioningFactor: LinearizableFactor1 {
     return reprojectionError
   }
 }
+
+public struct CameraCalibrationFactor: LinearizableFactor2 {
+  public let edges: Variables.Indices
+
+  /// 3D point on the target
+  @noDerivative public let objectPoint: Vector3
+
+  /// 2D point in the image
+  public let imagePoint: Vector2
+
+  public init(_ poseId: TypedID<Pose3>, _ calibrationId: TypedID<CameraCalibrationManifold>, _ objectPoint: Vector3, _ imagePoint: Vector2) {
+    self.edges = Tuple2(poseId, calibrationId)
+    self.objectPoint = objectPoint
+    self.imagePoint = imagePoint
+  }
+
+  @differentiable
+  public func errorVector(_ pose: Pose3, _ calibration: CameraCalibrationManifold) -> Vector2 {
+    // pose is eTo, PinholeCamera takes oTe
+    let camera = PinholeCamera(pose.inverse(), calibration.coordinate)
+    let projectedImagePoint = camera.project(objectPoint)
+    let reprojectionError = projectedImagePoint - imagePoint
+    // print("CameraResectioningFactor", objectPoint, projectedImagePoint, imagePoint, reprojectionError)
+    return reprojectionError
+  }
+}

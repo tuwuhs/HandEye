@@ -1,6 +1,27 @@
 import SwiftFusion
 
-public struct CameraCalibration: Equatable {
+public struct CameraCalibrationManifold: Equatable, Differentiable, Manifold {
+  public typealias Coordinate = CameraCalibration
+  public typealias TangentVector = Vector5
+
+  public var coordinateStorage: CameraCalibration
+
+  public init() {
+    self.init(coordinateStorage: CameraCalibration())
+  }
+
+  public init(coordinateStorage: CameraCalibration) {
+    self.coordinateStorage = coordinateStorage
+  }
+
+  public mutating func move(along direction: Vector5) {
+    coordinateStorage = coordinateStorage.retract(direction)
+  }
+}
+
+public struct CameraCalibration: Equatable, Differentiable, ManifoldCoordinate {
+  public typealias LocalCoordinate = Vector5
+
   public var fx: Double
   public var fy: Double
   public var s: Double
@@ -15,8 +36,20 @@ public struct CameraCalibration: Equatable {
     self.v0 = v0
   }
 
+  public init(_ params: Vector5) {
+    self.fx = params.s0
+    self.fy = params.s1
+    self.s = params.s2
+    self.u0 = params.s3
+    self.v0 = params.s4
+  }
+
   public init() {
     self.init(fx: 1.0, fy: 1.0, s: 0.0, u0: 0.0, v0: 0.0)
+  }
+
+  public func asVector() -> Vector5 {
+    Vector5(fx, fy, s, u0, v0)
   }
 
   @differentiable
@@ -25,11 +58,21 @@ public struct CameraCalibration: Equatable {
       fx * q.x + s * q.y + u0,
       fy * q.y + v0)
   }
+
+  @differentiable(wrt: local)
+  public func retract(_ local: Vector5) -> CameraCalibration {
+    CameraCalibration(asVector() + local)
+  }
+
+  @differentiable(wrt: global)
+  public func localCoordinate(_ global: CameraCalibration) -> Vector5 {
+    global.asVector() - asVector()
+  }
 }
 
 public struct PinholeCamera: Differentiable {
   public var pose: Pose3
-  @noDerivative public var calibration: CameraCalibration
+  public var calibration: CameraCalibration
 
   @differentiable
   public init(_ pose: Pose3, _ calibration: CameraCalibration) {
@@ -96,7 +139,7 @@ public struct PinholeCamera: Differentiable {
             p.x * (v) + p.y * (-u), 
             p.x * (-d), 
             p.y * (-d), 
-            p.x * (d*u) + p.y * (d*v))), 
+            p.x * (d*u) + p.y * (d*v)), calibration: calibration.zeroTangentVector),
           d * Vector3(
             p.x * (Rt_[0, 0] - u * Rt_[2, 0]) + p.y * (Rt_[1, 0] - v * Rt_[2, 0]), 
             p.x * (Rt_[0, 1] - u * Rt_[2, 1]) + p.y * (Rt_[1, 1] - v * Rt_[2, 1]), 
