@@ -36,7 +36,7 @@ func main() {
   }
 
   // Project points
-  let cameraCalibration = CameraCalibration(fx: 300.0, fy: 300.0, s: 0.0, u0: 320.0, v0: 240.0)
+  let cameraCalibration = Cal3_S2(fx: 300.0, fy: 300.0, s: 0.0, u0: 320.0, v0: 240.0)
   let imagePointsList = wThList.map { wTh -> [Vector2] in 
     let oTe = wTo.inverse() * wTh * hTe
     let cam = PinholeCamera(oTe, cameraCalibration)
@@ -53,12 +53,19 @@ func main() {
   // Try camera resectioning
   var graph = FactorGraph()
   var x = VariableAssignments()
-  let camCalibrationId = x.store(CameraCalibrationManifold())
+  let camCalibrationId = x.store(Cal3_S2Manifold())
 
   for i in 0..<wThList.count {
     let imagePoints = imagePointsList[i]
     let wTh = wThList[i]
 
+    // let camPoseId = x.store(Pose3(
+    //   Rot3(
+    //     -1.0, 0.0, 0.0,
+    //     0.0, 1.0, 0.0,
+    //     0.0, 0.0, -1.0), 
+    //   Vector3(-0.1, -0.1, 0.1))
+    // )
     let camPoseId = x.store((wTo.inverse() * wTh * hTe).inverse())
 
     for j in 0..<imagePoints.count {
@@ -95,8 +102,9 @@ func main() {
     // break;
   }
 
-  var optimizer = LM(precision: 1e-5, max_iteration: 100)
+  var optimizer = LM(precision: 1e-5, max_iteration: 200)
   try? optimizer.optimize(graph: graph, initial: &x)
+
   print(x[camCalibrationId])
 
   // // Add pose noise

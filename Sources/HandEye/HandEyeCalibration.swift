@@ -149,7 +149,7 @@ public func calibrateHandEye_factorGraphImagePoints(
   worldToHand: [Pose3], 
   imagePointsList: [[Vector2]], 
   objectPoints: [Vector3], 
-  cameraCalibration: CameraCalibration,
+  cameraCalibration: Cal3_S2,
   handToEyeEstimate: Pose3,
   worldToObjectEstimate: Pose3) 
   -> (Pose3, Pose3) {
@@ -230,7 +230,7 @@ public func calibrateHandEye_factorGraphImagePointsNoObject(
   worldToHand: [Pose3], 
   imagePointsList: [[Vector2]], 
   objectPoints: [Vector3], 
-  cameraCalibration: CameraCalibration,
+  cameraCalibration: Cal3_S2,
   handToEyeEstimate: Pose3,
   worldToObjectEstimate: Pose3) 
   -> (Pose3, Pose3) {
