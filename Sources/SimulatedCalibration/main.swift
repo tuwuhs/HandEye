@@ -29,19 +29,19 @@ func main() {
     "Some image points fall outside the image boundary")
   
   // Try camera resectioning
-  for i in 0..<wThList.count {
-    let imagePoints = imagePointsList[i]
-    let wTh = wThList[i]
+  // for i in 0..<wThList.count {
+  //   let imagePoints = imagePointsList[i]
+  //   let wTh = wThList[i]
 
-    let oTe_estimate = performCameraResectioning(
-      wTh: wTh, imagePoints: imagePoints, objectPoints: objectPoints, calibration: cameraCalibration)
+  //   let oTe_estimate = performCameraResectioning(
+  //     wTh: wTh, imagePoints: imagePoints, objectPoints: objectPoints, calibration: cameraCalibration)
     
-    print(oTe_estimate)
-    print((wTo.inverse() * wTh * hTe).inverse())
-    print()
+  //   print(oTe_estimate)
+  //   print((wTo.inverse() * wTh * hTe).inverse())
+  //   print()
 
-    // break
-  }
+  //   // break
+  // }
 
   // Add pose noise
   // wThList = applyNoise(wThList, 0.01, 0.1)
