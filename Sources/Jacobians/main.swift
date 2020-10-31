@@ -33,9 +33,9 @@ func main() {
       let crf = CameraResectioningFactor(camPoseId, objectPoints[j], imagePoints[j], cameraCalibration)
 
       // Move a bit from the true value
-      let currPose = Pose3(
+      var currPose = Pose3(
         Rot3(),
-        Vector3(0.0, 0.0, 0.0)) * eTo
+        Vector3(1.0, 0.0, 0.0)) * eTo
       
       // let currPose = Pose3(
       //   Rot3(
@@ -56,8 +56,21 @@ func main() {
       print(error)
       print(pb(Vector2(1, 0)))
       print(pb(Vector2(0, 1)))
+      print()
 
-      // break
+      // Try gradient descent, doesn't really work: error decreases then oscillates
+      for k in 0..<50 {
+        print((currPose * eTo.inverse()).t)
+
+        let (errorNorm, grad) = valueWithGradient(at: currPose, in: { p in crf.errorVector(p).norm })
+        print(errorNorm)
+        print(grad)
+
+        currPose.move(along: -1e-4 * grad)
+        print()
+      }
+
+      break
     }
 
     break
