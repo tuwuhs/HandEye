@@ -21,32 +21,10 @@ func main() {
     print("tvec: \((handToEye.t - hTe.t).norm)")
   }
 
-  // Create target object
-  let rows = 7
-  let cols = 5
-  let dimension = 0.15
-  var objectPoints: [Vector3] = []
-  for row in 0..<rows {
-    for col in 0..<cols {
-      objectPoints.append(dimension * Vector3(
-        Double(row) - Double(rows - 1) / 2.0, 
-        Double(col) - Double(cols - 1) / 2.0, 
-        0.0))
-    }
-  }
-
   // Project points
+  let objectPoints = createTargetObject(rows: 3, cols: 2, dimension: 0.15)
   let cameraCalibration = CameraCalibration(fx: 300.0, fy: 300.0, s: 0.0, u0: 320.0, v0: 240.0)
-  let imagePointsList = wThList.map { wTh -> [Vector2] in 
-    let oTe = wTo.inverse() * wTh * hTe
-    let cam = PinholeCamera(oTe, cameraCalibration)
-    // print(oTe.t)
-    return objectPoints.map { op -> Vector2 in 
-      let p = cam.project(op)
-      // print(oTe.t, op, p)
-      return p
-    }
-  }
+  let imagePointsList = projectPoints(eToList: eToList, objectPoints: objectPoints, calibration: cameraCalibration)
   assert(imagePointsList.allSatisfy { $0.allSatisfy { $0.x >= 0 && $0.x < 640 && $0.y >= 0 && $0.y < 480 } },
     "Some image points fall outside the image boundary")
   
@@ -100,7 +78,7 @@ func main() {
   // }
 
   // Add pose noise
-  // wThList = applyNoise(wThList, 0.05, 0.5)
+  // wThList = applyNoise(wThList, 0.01, 0.1)
 
   // print("Actual hand-to-eye: \(hTe)")
   // print("Actual world-to-object: \(wTo)")

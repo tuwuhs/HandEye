@@ -188,3 +188,34 @@ public func applyNoise(_ poses: [Pose3], _ stdevTrans: Double, _ stdevRotDeg: Do
     return noise * p
   }
 }
+
+/// Returns list of image points and object points.
+public func projectPoints(
+  eToList: [Pose3], objectPoints: [Vector3], calibration: CameraCalibration) 
+  -> [[Vector2]] {
+  eToList.map { eTo -> [Vector2] in 
+    let oTe = eTo.inverse()
+    let cam = PinholeCamera(oTe, calibration)
+    // print(oTe.t)
+    return objectPoints.map { op -> Vector2 in 
+      let p = cam.project(op)
+      // print(oTe.t, op, p)
+      return p
+    }
+  }
+}
+
+/// Creates a target object with the specified shape.
+public func createTargetObject(rows: Int, cols: Int, dimension: Double) -> [Vector3] {
+  var objectPoints: [Vector3] = []
+  for row in 0..<rows {
+    for col in 0..<cols {
+      objectPoints.append(dimension * Vector3(
+        Double(row) - Double(rows - 1) / 2.0, 
+        Double(col) - Double(cols - 1) / 2.0, 
+        0.0))
+    }
+  }
+
+  return objectPoints;
+}

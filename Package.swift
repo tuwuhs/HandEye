@@ -10,11 +10,12 @@ let package = Package(
     .library(name: "HandEye", targets: ["HandEye"]),
     .executable(name: "CameraResectioning", targets: ["CameraResectioning"]),
     .executable(name: "SimulatedCalibration", targets: ["SimulatedCalibration"]),
+    .executable(name: "Jacobians", targets: ["Jacobians"]),
   ],
   dependencies: [
     // Dependencies declare other packages that this package depends on.
     // .package(url: /* package url */, from: "1.0.0"),
-    .package(name: "Benchmark", url: "https://github.com/google/swift-benchmark.git", .branch("master")),
+    // .package(name: "Benchmark", url: "https://github.com/google/swift-benchmark.git", .branch("master")),
     .package(url: "https://github.com/tuwuhs/SwiftFusion.git", .branch("dev-handeye")),
   ],
   targets: [
@@ -32,12 +33,8 @@ let package = Package(
       name: "SimulatedCalibration",
       dependencies: ["HandEye"]),
     .target(
-      name: "HandEyeBenchmark",
-      dependencies: [
-        "HandEye",
-        "Benchmark",
-        "SwiftFusion",
-      ]),
+      name: "Jacobians",
+      dependencies: ["HandEye"]),
     .testTarget(
       name: "HandEyeTests",
       dependencies: ["HandEye"]),
