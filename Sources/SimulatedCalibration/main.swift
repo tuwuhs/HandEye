@@ -22,9 +22,9 @@ func main() {
   }
 
   // Create target object
-  let rows = 3
-  let cols = 3
-  let dimension = 0.20
+  let rows = 7
+  let cols = 5
+  let dimension = 0.15
   var objectPoints: [Vector3] = []
   for row in 0..<rows {
     for col in 0..<cols {
@@ -100,39 +100,39 @@ func main() {
   // }
 
   // Add pose noise
-  wThList = applyNoise(wThList, 0.05, 0.5)
+  // wThList = applyNoise(wThList, 0.05, 0.5)
 
   // print("Actual hand-to-eye: \(hTe)")
   // print("Actual world-to-object: \(wTo)")
   // print()
 
-  let hTe_tsai = calibrateHandEye_tsai(worldToHand: wThList, eyeToObject: eToList)
-  let wTo_tsai = wThList[0] * hTe_tsai * eToList[0]
-  // print("Tsai's method")
-  // print("Estimated hand-to-eye: \(hTe_tsai)")
-  // printError(hTe_tsai)
-  printErrorMagnitude(hTe_tsai)
-  // print()
+  // let hTe_tsai = calibrateHandEye_tsai(worldToHand: wThList, eyeToObject: eToList)
+  // let wTo_tsai = wThList[0] * hTe_tsai * eToList[0]
+  // // print("Tsai's method")
+  // // print("Estimated hand-to-eye: \(hTe_tsai)")
+  // // printError(hTe_tsai)
+  // printErrorMagnitude(hTe_tsai)
+  // // print()
 
-  let (hTe_factorGraphPose, wTo_factorGraphPose) = calibrateHandEye_factorGraphPose(worldToHand: wThList, eyeToObject: eToList)
-  // print("Factor graph, pose measurements")
-  // print("Estimated hand-to-eye: \(hTe_factorGraphPose)")
-  // print("Estimated world-to-object: \(wTo_factorGraphPose)")
-  // printError(hTe_factorGraphPose)
-  printErrorMagnitude(hTe_factorGraphPose)
-  // print()
+  // let (hTe_factorGraphPose, wTo_factorGraphPose) = calibrateHandEye_factorGraphPose(worldToHand: wThList, eyeToObject: eToList)
+  // // print("Factor graph, pose measurements")
+  // // print("Estimated hand-to-eye: \(hTe_factorGraphPose)")
+  // // print("Estimated world-to-object: \(wTo_factorGraphPose)")
+  // // printError(hTe_factorGraphPose)
+  // printErrorMagnitude(hTe_factorGraphPose)
+  // // print()
 
   let (hTe_fgImagePoints, wTo_fgImagePoints) = calibrateHandEye_factorGraphImagePoints(
     worldToHand: wThList, 
     imagePointsList: imagePointsList, 
     objectPoints: objectPoints, 
     cameraCalibration: cameraCalibration,
-    handToEyeEstimate: hTe_tsai,
-    worldToObjectEstimate: wTo_tsai)
+    handToEyeEstimate: Pose3(),
+    worldToObjectEstimate: Pose3())
 
   // print("Factor graph, image point measurements")
-  // print("Estimated hand-to-eye: \(hTe_fgImagePoints)")
-  // print("Estimated world-to-object: \(wTo_fgImagePoints)")
+  print("Estimated hand-to-eye: \(hTe_fgImagePoints)")
+  print("Estimated world-to-object: \(wTo_fgImagePoints)")
   // printError(hTe_fgImagePoints)
   printErrorMagnitude(hTe_fgImagePoints)
   // print()
