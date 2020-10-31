@@ -3,6 +3,54 @@ import PenguinStructures
 import SwiftFusion
 import TensorFlow
 
+// MARK: - Camera resectioning
+
+/// Returns the camera pose oTe
+public func performCameraResectioning(
+  wTh: Pose3, imagePoints: [Vector2], objectPoints: [Vector3], calibration: CameraCalibration) 
+  -> Pose3 {
+  var x = VariableAssignments()
+  let camPoseId = x.store(Pose3(
+    Rot3(
+      -1.0, 0.0, 0.0,
+      0.0, 1.0, 0.0,
+      0.0, 0.0, -1.0), 
+    Vector3(-0.1, -0.1, 0.1)))
+
+  var graph = FactorGraph()
+
+  for j in 0..<imagePoints.count {
+    graph.store(CameraResectioningFactor(camPoseId, objectPoints[j], imagePoints[j], calibration))
+  }
+
+  // var timestamps: [DispatchTime] = []
+  // let start = DispatchTime.now()
+  // for _ in 0..<10 {
+  //   timestamps.append(DispatchTime.now())
+  //   let linearized = graph.linearized(at: x)
+  //   timestamps.append(DispatchTime.now())
+  //   var dx = x.tangentVectorZeros
+  //   timestamps.append(DispatchTime.now())
+  //   var optimizer = GenericCGLS(precision: 0, max_iteration: 6)
+  //   timestamps.append(DispatchTime.now())
+  //   optimizer.optimize(gfg: linearized, initial: &dx)
+  //   timestamps.append(DispatchTime.now())
+  //   x.move(along: dx)
+  // }
+
+  // for (ts1, ts2) in zip(timestamps[0..<timestamps.count-1], timestamps[1...]) {
+  //   let timeInterval = ts2.uptimeNanoseconds - ts1.uptimeNanoseconds
+  //   print(timeInterval)
+  // }
+
+  var optimizer = LM(precision: 1e-5, max_iteration: 100)
+  try? optimizer.optimize(graph: graph, initial: &x)
+
+  // print(x[camPoseId])
+
+  return x[camPoseId]
+}
+
 // MARK: - Tsai's method
 
 /// Returns the estimated handToEye transformation

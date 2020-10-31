@@ -106,7 +106,7 @@ public func simulatePoseEyeInHand(nPoses: Int, addNoise: Bool) -> ([Pose3], [Pos
 // MARK: - Simulated dataset from Koide
 
 /// Returns gripper2Base (`[Pose3]`), target2Cam ('[Pose3]'), cam2Gripper (`Pose3`), target2Base (`Pose3`)
-public func simulatePoseKoide() -> ([Pose3], [Pose3], Pose3, Pose3) {
+public func simulatePoseKoide(eTh: Pose3? = nil, wTo: Pose3? = nil) -> ([Pose3], [Pose3], Pose3, Pose3) {
   let xRange = 1
   let yRange = 1
   let zRange = 1
@@ -122,13 +122,13 @@ public func simulatePoseKoide() -> ([Pose3], [Pose3], Pose3, Pose3) {
   let handToEyeTrans = 0.5
   let handToEyeRotDeg = 90.0
 
-  let wTo = Pose3(Rot3(), Vector3(0.3, 0.3, 0.0))
-  // let wTo = Pose3(Rot3.fromAngleAxis(0.1, Vector3(1.0, 2.0, 3.0).normalized()), Vector3(0.2, -0.3, 0.0))
+  let wTo = wTo ?? Pose3(Rot3(), Vector3(0.3, 0.3, 0.0))
+  // let wTo: Pose3 = wTo ?? Pose3(Rot3.fromAngleAxis(0.1, Vector3(1.0, 2.0, 3.0).normalized()), Vector3(0.2, -0.3, 0.0))
   
   var rng = SystemRandomNumberGenerator()
   let rotDistribution = NormalDistribution<Double>(mean: 0.0, standardDeviation: handToEyeRotDeg * .pi / 180.0)
   let transDistribution = NormalDistribution<Double>(mean: 0.0, standardDeviation: handToEyeTrans)
-  let eTh = Pose3(Rot3.fromAngleAxis(
+  let eTh = eTh ?? Pose3(Rot3.fromAngleAxis(
     rotDistribution.next(using: &rng), Vector3(
       Double.random(in: -1.0...1.0),
       Double.random(in: -1.0...1.0),
