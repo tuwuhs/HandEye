@@ -32,10 +32,13 @@ func main() {
     for j in 0..<imagePoints.count {
       let crf = CameraResectioningFactor(camPoseId, objectPoints[j], imagePoints[j], cameraCalibration)
 
+      // print(imagePoints[j])
+      // print(objectPoints[j])
+
       // Move a bit from the true value
       var currPose = Pose3(
         Rot3(),
-        Vector3(1.0, 0.0, 0.0)) * eTo
+        Vector3(0.2, 0.4, 0.0)) * eTo
       
       // let currPose = Pose3(
       //   Rot3(
@@ -58,19 +61,19 @@ func main() {
       print(pb(Vector2(0, 1)))
       print()
 
-      // Try gradient descent, doesn't really work: error decreases then oscillates
-      for k in 0..<50 {
-        print((currPose * eTo.inverse()).t)
+      // // Try gradient descent, doesn't really work: error decreases then oscillates
+      // for k in 0..<50 {
+      //   print((currPose * eTo.inverse()).t)
 
-        let (errorNorm, grad) = valueWithGradient(at: currPose, in: { p in crf.errorVector(p).norm })
-        print(errorNorm)
-        print(grad)
+      //   let (errorNorm, grad) = valueWithGradient(at: currPose, in: { p in crf.errorVector(p).norm })
+      //   print(errorNorm)
+      //   print(grad)
 
-        currPose.move(along: -1e-4 * grad)
-        print()
-      }
+      //   currPose.move(along: -1e-4 * grad)
+      //   print()
+      // }
 
-      break
+      // break
     }
 
     break
