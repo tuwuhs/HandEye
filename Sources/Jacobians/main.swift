@@ -36,23 +36,9 @@ func main() {
       // print(objectPoints[j])
 
       // Move a bit from the true value
-      var currPose = Pose3(
+      let currPose = Pose3(
         Rot3(),
         Vector3(0.2, 0.4, 0.0)) * eTo
-      
-      // let currPose = Pose3(
-      //   Rot3(
-      //     -1, 0, 0,
-      //     0, 1, 0,
-      //     0, 0, -1),
-      //   Vector3(0, 0, 1))
-
-      // let currPose = Pose3(
-      //   Rot3(
-      //     -1, 0, 0,
-      //     0, 1, 0,
-      //     0, 0, -1),
-      //   Vector3(-0.1, -0.1, 0.1))
 
       // let error = crf.errorVector(currPose)
       let (error, pb) = valueWithPullback(at: currPose, in: crf.errorVector)
@@ -78,6 +64,60 @@ func main() {
 
     break
   }
+
+  print()
+
+  for i in 0..<eToList.count {
+    let eTo = eToList[i]
+    let wTh = wThList[i]
+
+    var x = VariableAssignments()
+    let hTeID = x.store(Pose3())
+    let wToID = x.store(Pose3())
+    let eToID = x.store(Pose3())
+
+    let hepf = HandEyePoseFactor(hTeID, wToID, eToID, wTh)
+
+    let hTe_curr = Pose3() * hTe
+      // Rot3(
+      //   -1, 0, 0,
+      //   0, 1, 0,
+      //   0, 0, -1),
+      // Vector3(0.1, 0.1, 0.1)) * hTe
+    
+    let eTo_curr = Pose3( // ) * eTo
+      Rot3(),
+      Vector3(0.2, 0.4, 0.0)) * eTo
+
+    let wTo_curr = wTh * hTe * eTo
+
+    let (error, pb) = valueWithPullback(at: hTe_curr, wTo_curr, eTo_curr, in: hepf.errorVector)
+    print(error)
+    print()
+    print(pb(Vector6(1, 0, 0, 0, 0, 0)).0)
+    print(pb(Vector6(0, 1, 0, 0, 0, 0)).0)
+    print(pb(Vector6(0, 0, 1, 0, 0, 0)).0)
+    print(pb(Vector6(0, 0, 0, 1, 0, 0)).0)
+    print(pb(Vector6(0, 0, 0, 0, 1, 0)).0)
+    print(pb(Vector6(0, 0, 0, 0, 0, 1)).0)
+    print()
+    print(pb(Vector6(1, 0, 0, 0, 0, 0)).1)
+    print(pb(Vector6(0, 1, 0, 0, 0, 0)).1)
+    print(pb(Vector6(0, 0, 1, 0, 0, 0)).1)
+    print(pb(Vector6(0, 0, 0, 1, 0, 0)).1)
+    print(pb(Vector6(0, 0, 0, 0, 1, 0)).1)
+    print(pb(Vector6(0, 0, 0, 0, 0, 1)).1)
+    print()
+    print(pb(Vector6(1, 0, 0, 0, 0, 0)).2)
+    print(pb(Vector6(0, 1, 0, 0, 0, 0)).2)
+    print(pb(Vector6(0, 0, 1, 0, 0, 0)).2)
+    print(pb(Vector6(0, 0, 0, 1, 0, 0)).2)
+    print(pb(Vector6(0, 0, 0, 0, 1, 0)).2)
+    print(pb(Vector6(0, 0, 0, 0, 0, 1)).2)
+
+    break;
+  }
+
 }
 
 main()
