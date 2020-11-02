@@ -6,7 +6,9 @@ import SwiftFusion
 func main() {
   // let (wThList, eToList, hTe, wTo) = simulatePoseEyeInHand(nPoses: 10, addNoise: true)
   
-  var (wThList, eToList, hTe, wTo) = simulatePoseKoide()
+  var (wThList, eToList, hTe, wTo) = simulatePoseKoide(eTh: Pose3(
+    Rot3(),
+    Vector3(0.1, -0.1, 0.05)))
   // wThList = [wThList[1], wThList[5], wThList[12]]
   // eToList = [eToList[1], eToList[5], eToList[12]]
   
