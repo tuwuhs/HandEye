@@ -7,8 +7,8 @@ import TensorFlow
 
 /// Returns the camera pose oTe
 public func performCameraResectioning(
-  wTh: Pose3, imagePoints: [Vector2], objectPoints: [Vector3], calibration: CameraCalibration) 
-  -> Pose3 {
+    wTh: Pose3, imagePoints: [Vector2], objectPoints: [Vector3], calibration: CameraCalibration) 
+    -> Pose3 {
   var x = VariableAssignments()
   let camPoseId = x.store(Pose3(
     Rot3(
@@ -53,8 +53,8 @@ public func performCameraResectioning(
 
 // MARK: - Tsai's method
 
-/// Returns the estimated handToEye transformation
-public func calibrateHandEye_tsai(worldToHand Hg: [Pose3], eyeToObject Hc: [Pose3]) -> Pose3 {
+/// Returns the estimated hTe transformation
+public func calibrateHandEye_tsai(wThList Hg: [Pose3], eToList Hc: [Pose3]) -> Pose3 {
   // Solves AX = XB problem
 
   assert(Hg.count == Hc.count)
@@ -121,37 +121,37 @@ public func calibrateHandEye_tsai(worldToHand Hg: [Pose3], eyeToObject Hc: [Pose
 
 public struct FixedHandEyePoseFactor<Pose: LieGroup>: LinearizableFactor2 {
   public let edges: Variables.Indices
-  public let eyeToObject: Pose
-  public let worldToHand: Pose
+  public let eTo: Pose
+  public let wTh: Pose
   
-  public init (_ handToEyeID: TypedID<Pose>, _ worldToObjectID: TypedID<Pose>, _ eyeToObject: Pose, _ worldToHand: Pose) {
-    self.edges = Tuple2(handToEyeID, worldToObjectID)
-    self.eyeToObject = eyeToObject
-    self.worldToHand = worldToHand
+  public init (_ hTeID: TypedID<Pose>, _ wToID: TypedID<Pose>, _ eTo: Pose, _ wTh: Pose) {
+    self.edges = Tuple2(hTeID, wToID)
+    self.eTo = eTo
+    self.wTh = wTh
   }
 
   @differentiable
-  public func errorVector(_ handToEye: Pose, _ worldToObject: Pose) -> Pose.TangentVector {
+  public func errorVector(_ hTe: Pose, _ wTo: Pose) -> Pose.TangentVector {
     // Q: What is the difference? Which error vector is more correct?
-    // return worldToHand.localCoordinate(worldToObject * eyeToObject.inverse() * handToEye.inverse())
-    return eyeToObject.localCoordinate(handToEye.inverse() * worldToHand.inverse() * worldToObject)
+    return wTh.localCoordinate(wTo * eTo.inverse() * hTe.inverse())
+    // return eTo.localCoordinate(hTe.inverse() * wTh.inverse() * wTo)
   }
 }
 
-/// Returns the estimated handToEye and worldToObject transformations
-public func calibrateHandEye_factorGraphPose(worldToHand: [Pose3], eyeToObject: [Pose3]) -> (Pose3, Pose3) {
+/// Returns the estimated hTe and wTo transformations
+public func calibrateHandEye_factorGraphPose(wThList: [Pose3], eToList: [Pose3]) -> (Pose3, Pose3) {
   // Solves AX = ZB problem
 
-  assert(worldToHand.count == eyeToObject.count)
-  let nPoses = worldToHand.count
+  assert(wThList.count == eToList.count)
+  let nPoses = wThList.count
 
   var x = VariableAssignments()
-  let handToEyeID = x.store(Pose3())
-  let worldToObjectID = x.store(Pose3())
+  let hTeID = x.store(Pose3())
+  let wToID = x.store(Pose3())
 
   var graph = FactorGraph()
   for i in 0..<nPoses {
-    graph.store(FixedHandEyePoseFactor(handToEyeID, worldToObjectID, eyeToObject[i], worldToHand[i]))
+    graph.store(FixedHandEyePoseFactor(hTeID, wToID, eToList[i], wThList[i]))
   }
 
   // for _ in 0..<3 {
@@ -167,90 +167,91 @@ public func calibrateHandEye_factorGraphPose(worldToHand: [Pose3], eyeToObject: 
   try? opt.optimize(graph: graph, initial: &x)
 
   // Error vectors
-  // print(cam2Gripper.localCoordinate(x[handToEyeID]))
-  // print(target2Base.localCoordinate(x[worldToObjectID]))
+  // print(cam2Gripper.localCoordinate(x[hTeID]))
+  // print(target2Base.localCoordinate(x[wToID]))
 
-  return (x[handToEyeID], x[worldToObjectID])
+  return (x[hTeID], x[wToID])
 }
 
 // MARK: - Factor graph, image point measurements
 
 public struct HandEyePoseFactor<Pose: LieGroup>: LinearizableFactor3 {
   public let edges: Variables.Indices
-  public let worldToHand: Pose
+  public let wTh: Pose
   
-  public init (_ handToEyeID: TypedID<Pose>, _ worldToObjectID: TypedID<Pose>, _ eyeToObjectID: TypedID<Pose>, _ worldToHand: Pose) {
-    self.edges = Tuple3(handToEyeID, worldToObjectID, eyeToObjectID)
-    self.worldToHand = worldToHand
+  public init (_ hTeID: TypedID<Pose>, _ wToID: TypedID<Pose>, _ eToID: TypedID<Pose>, _ wTh: Pose) {
+    self.edges = Tuple3(hTeID, wToID, eToID)
+    self.wTh = wTh
   }
 
   @differentiable
-  public func errorVector(_ handToEye: Pose, _ worldToObject: Pose, _ eyeToObject: Pose) -> Pose.TangentVector {
-    let error = worldToHand.localCoordinate(worldToObject * eyeToObject.inverse() * handToEye.inverse())
+  public func errorVector(_ hTe: Pose, _ wTo: Pose, _ eTo: Pose) -> Pose.TangentVector {
+    let error = wTh.localCoordinate(wTo * eTo.inverse() * hTe.inverse())
     // print("HandEyePoseFactor", error)
     return error
   }
 }
 
-/// Returns the estimated handToEye and worldToObject transformations
+/// Returns the estimated hTe and wTo transformations
 public func calibrateHandEye_factorGraphImagePoints(
-  worldToHand: [Pose3], 
-  imagePointsList: [[Vector2]], 
-  objectPoints: [Vector3], 
-  cameraCalibration: CameraCalibration,
-  handToEyeEstimate: Pose3,
-  worldToObjectEstimate: Pose3) 
-  -> (Pose3, Pose3) {
-  assert(worldToHand.count == imagePointsList.count)
+    wThList: [Pose3], 
+    imagePointsList: [[Vector2]], 
+    objectPoints: [Vector3], 
+    cameraCalibration: CameraCalibration,
+    hTeEstimate: Pose3,
+    wToEstimate: Pose3) 
+    -> (Pose3, Pose3) {
+  assert(wThList.count == imagePointsList.count)
   
-  let nPoses = worldToHand.count
+  let nPoses = wThList.count
 
   var x = VariableAssignments()
-  let handToEyeID = x.store(handToEyeEstimate)
-  let worldToObjectID = x.store(worldToObjectEstimate)
+  let hTeID = x.store(hTeEstimate)
+  let wToID = x.store(wToEstimate)
 
   var graph = FactorGraph()
-  var eyeToObjectIDList: [TypedID<Pose3>] = []
-  let eyeToObjectEstimates = worldToHand.map { wTh -> Pose3 in
-    handToEyeEstimate.inverse() * wTh.inverse() * worldToObjectEstimate
+  var eToIDList: [TypedID<Pose3>] = []
+  let eToEstimates = wThList.map { wTh -> Pose3 in
+    hTeEstimate.inverse() * wTh.inverse() * wToEstimate
   }
+
   for i in 0..<nPoses {
     let imagePoints = imagePointsList[i]
     assert(imagePoints.count == objectPoints.count)
 
-    let eyeToObjectID = x.store(eyeToObjectEstimates[i])
-    // let eyeToObjectID = x.store(Pose3(
+    let eToID = x.store(eToEstimates[i])
+    // let eToID = x.store(Pose3(
     //   Rot3(
     //     -1.0, 0.0, 0.0,
     //     0.0, 1.0, 0.0,
     //     0.0, 0.0, -1.0), 
-    //   Vector3(-0.1, -0.1, 0.1)))
-    eyeToObjectIDList.append(eyeToObjectID)
+    //   Vector3(-0.1, -0.1, 0.1)).inverse())
+    eToIDList.append(eToID)
 
-    graph.store(HandEyePoseFactor(handToEyeID, worldToObjectID, eyeToObjectID, worldToHand[i]))
+    graph.store(HandEyePoseFactor(hTeID, wToID, eToID, wThList[i]))
     for j in 0..<imagePoints.count {
-      graph.store(CameraResectioningFactor(eyeToObjectID, objectPoints[j], imagePoints[j], cameraCalibration))
+      graph.store(CameraResectioningFactor(eToID, objectPoints[j], imagePoints[j], cameraCalibration))
     }
   }
 
-  // var opt = LM(precision: 1e-6, max_iteration: 200)
-  // // opt.verbosity = .TRYLAMBDA
-  // opt.max_inner_iteration = 120
-  // try? opt.optimize(graph: graph, initial: &x)
+  var opt = LM(precision: 1e-6, max_iteration: 200)
+  // opt.verbosity = .TRYLAMBDA
+  opt.max_inner_iteration = 120
+  try? opt.optimize(graph: graph, initial: &x)
 
-  for _ in 0..<120 {
-    let gfg = graph.linearized(at: x)
-    var dx = x.tangentVectorZeros
-    var opt = GenericCGLS(precision: 0, max_iteration: 120)
-    opt.optimize(gfg: gfg, initial: &dx)
-    x.move(along: dx)
-  }
+  // for _ in 0..<120 {
+  //   let gfg = graph.linearized(at: x)
+  //   var dx = x.tangentVectorZeros
+  //   var opt = GenericCGLS(precision: 0, max_iteration: 120)
+  //   opt.optimize(gfg: gfg, initial: &dx)
+  //   x.move(along: dx)
+  // }
 
   // Error vectors
-  // print(cam2Gripper.localCoordinate(x[handToEyeID]))
-  // print(target2Base.localCoordinate(x[worldToObjectID]))
+  // print(cam2Gripper.localCoordinate(x[hTeID]))
+  // print(target2Base.localCoordinate(x[wToID]))
 
-  return (x[handToEyeID], x[worldToObjectID])
+  return (x[hTeID], x[wToID])
 }
 
 // MARK: - 
@@ -258,59 +259,59 @@ public func calibrateHandEye_factorGraphImagePoints(
 // Assumes wTo = I
 public struct HandEyePoseNoObjectFactor<Pose: LieGroup>: LinearizableFactor2 {
   public let edges: Variables.Indices
-  public let worldToHand: Pose
+  public let wTh: Pose
   
-  public init (_ handToEyeID: TypedID<Pose>, _ eyeToObjectID: TypedID<Pose>, _ worldToHand: Pose) {
-    self.edges = Tuple2(handToEyeID, eyeToObjectID)
-    self.worldToHand = worldToHand
+  public init (_ hTeID: TypedID<Pose>, _ eToID: TypedID<Pose>, _ wTh: Pose) {
+    self.edges = Tuple2(hTeID, eToID)
+    self.wTh = wTh
   }
 
   @differentiable
-  public func errorVector(_ handToEye: Pose, _ eyeToObject: Pose) -> Pose.TangentVector {
-    let error = worldToHand.localCoordinate(eyeToObject.inverse() * handToEye.inverse())
+  public func errorVector(_ hTe: Pose, _ eTo: Pose) -> Pose.TangentVector {
+    let error = wTh.localCoordinate(eTo.inverse() * hTe.inverse())
     // print("HandEyePoseFactor", error)
     return error
   }
 }
 
-/// Returns the estimated handToEye and worldToObject transformations
+/// Returns the estimated hTe and wTo transformations
 public func calibrateHandEye_factorGraphImagePointsNoObject(
-  worldToHand: [Pose3], 
-  imagePointsList: [[Vector2]], 
-  objectPoints: [Vector3], 
-  cameraCalibration: CameraCalibration,
-  handToEyeEstimate: Pose3,
-  worldToObjectEstimate: Pose3) 
-  -> (Pose3, Pose3) {
-  assert(worldToHand.count == imagePointsList.count)
+    wTh: [Pose3], 
+    imagePointsList: [[Vector2]], 
+    objectPoints: [Vector3], 
+    cameraCalibration: CameraCalibration,
+    hTeEstimate: Pose3,
+    wToEstimate: Pose3) 
+    -> (Pose3, Pose3) {
+  assert(wTh.count == imagePointsList.count)
   
-  let nPoses = worldToHand.count
+  let nPoses = wTh.count
 
   var x = VariableAssignments()
-  let handToEyeID = x.store(handToEyeEstimate)
-  let worldToObjectID = x.store(worldToObjectEstimate)
+  let hTeID = x.store(hTeEstimate)
+  let wToID = x.store(wToEstimate)
 
   var graph = FactorGraph()
-  var eyeToObjectIDList: [TypedID<Pose3>] = []
-  let eyeToObjectEstimates = worldToHand.map { wTh -> Pose3 in
-    handToEyeEstimate.inverse() * wTh.inverse() * worldToObjectEstimate
+  var eToIDList: [TypedID<Pose3>] = []
+  let eToEstimates = wTh.map { wTh -> Pose3 in
+    hTeEstimate.inverse() * wTh.inverse() * wToEstimate
   }
   for i in 0..<nPoses {
     let imagePoints = imagePointsList[i]
     assert(imagePoints.count == objectPoints.count)
 
-    // let eyeToObjectID = x.store(eyeToObjectEstimates[i])
-    let eyeToObjectID = x.store(Pose3(
+    // let eToID = x.store(eToEstimates[i])
+    let eToID = x.store(Pose3(
       Rot3(
         -1.0, 0.0, 0.0,
         0.0, 1.0, 0.0,
         0.0, 0.0, -1.0), 
-      Vector3(-0.1, -0.1, 0.1)))
-    eyeToObjectIDList.append(eyeToObjectID)
+      Vector3(-0.11, -0.11, 0.1)))
+    eToIDList.append(eToID)
 
-    graph.store(HandEyePoseNoObjectFactor(handToEyeID, eyeToObjectID, worldToHand[i]))
+    graph.store(HandEyePoseNoObjectFactor(hTeID, eToID, wTh[i]))
     for j in 0..<imagePoints.count {
-      graph.store(CameraResectioningFactor(eyeToObjectID, objectPoints[j], imagePoints[j], cameraCalibration))
+      graph.store(CameraResectioningFactor(eToID, objectPoints[j], imagePoints[j], cameraCalibration))
     }
   }
 
@@ -328,8 +329,8 @@ public func calibrateHandEye_factorGraphImagePointsNoObject(
   // }
 
   // Error vectors
-  // print(cam2Gripper.localCoordinate(x[handToEyeID]))
-  // print(target2Base.localCoordinate(x[worldToObjectID]))
+  // print(cam2Gripper.localCoordinate(x[hTeID]))
+  // print(target2Base.localCoordinate(x[wToID]))
 
-  return (x[handToEyeID], x[worldToObjectID])
+  return (x[hTeID], x[wToID])
 }

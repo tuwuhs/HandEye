@@ -77,20 +77,24 @@ func main() {
     let eToID = x.store(Pose3())
 
     let hepf = HandEyePoseFactor(hTeID, wToID, eToID, wTh)
+    // let fhepf = FixedHandEyePoseFactor(hTeID, wToID, eTo, wTh)
 
-    let hTe_curr = Pose3() * hTe
-      // Rot3(
-      //   -1, 0, 0,
-      //   0, 1, 0,
-      //   0, 0, -1),
-      // Vector3(0.1, 0.1, 0.1)) * hTe
+    let hTe_curr = Pose3( //) * hTe
+      Rot3(
+        -1, 0, 0,
+        0, 1, 0,
+        0, 0, -1),
+      Vector3(0.1, 0.1, 0.1)) * hTe
     
-    let eTo_curr = Pose3( // ) * eTo
+    let eTo_curr = Pose3( //) * eTo
       Rot3(),
       Vector3(0.2, 0.4, 0.0)) * eTo
 
-    let wTo_curr = wTh * hTe * eTo
+    let wTo_curr = Pose3( //) * wTo
+      Rot3(),
+      Vector3(0.2, 0.4, 0.0)) * wTo
 
+    // let (error, pb) = valueWithPullback(at: hTe_curr, wTo_curr, in: fhepf.errorVector)
     let (error, pb) = valueWithPullback(at: hTe_curr, wTo_curr, eTo_curr, in: hepf.errorVector)
     print(error)
     print()

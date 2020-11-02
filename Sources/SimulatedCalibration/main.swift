@@ -22,7 +22,7 @@ func main() {
   }
 
   // Project points
-  let objectPoints = createTargetObject(rows: 3, cols: 2, dimension: 0.15)
+  let objectPoints = createTargetObject(rows: 7, cols: 5, dimension: 0.15)
   let cameraCalibration = CameraCalibration(fx: 300.0, fy: 300.0, s: 0.0, u0: 320.0, v0: 240.0)
   let imagePointsList = projectPoints(eToList: eToList, objectPoints: objectPoints, calibration: cameraCalibration)
   assert(imagePointsList.allSatisfy { $0.allSatisfy { $0.x >= 0 && $0.x < 640 && $0.y >= 0 && $0.y < 480 } },
@@ -46,11 +46,11 @@ func main() {
   // Add pose noise
   // wThList = applyNoise(wThList, 0.01, 0.1)
 
-  // print("Actual hand-to-eye: \(hTe)")
-  // print("Actual world-to-object: \(wTo)")
-  // print()
+  print("Actual hand-to-eye: \(hTe)")
+  print("Actual world-to-object: \(wTo)")
+  print()
 
-  // let hTe_tsai = calibrateHandEye_tsai(worldToHand: wThList, eyeToObject: eToList)
+  // let hTe_tsai = calibrateHandEye_tsai(wThList: wThList, eToList: eToList)
   // let wTo_tsai = wThList[0] * hTe_tsai * eToList[0]
   // // print("Tsai's method")
   // // print("Estimated hand-to-eye: \(hTe_tsai)")
@@ -58,7 +58,8 @@ func main() {
   // printErrorMagnitude(hTe_tsai)
   // // print()
 
-  // let (hTe_factorGraphPose, wTo_factorGraphPose) = calibrateHandEye_factorGraphPose(worldToHand: wThList, eyeToObject: eToList)
+  // let (hTe_factorGraphPose, wTo_factorGraphPose) = calibrateHandEye_factorGraphPose(
+  //   wThList: wThList, eToList: eToList)
   // // print("Factor graph, pose measurements")
   // // print("Estimated hand-to-eye: \(hTe_factorGraphPose)")
   // // print("Estimated world-to-object: \(wTo_factorGraphPose)")
@@ -67,12 +68,12 @@ func main() {
   // // print()
 
   let (hTe_fgImagePoints, wTo_fgImagePoints) = calibrateHandEye_factorGraphImagePoints(
-    worldToHand: wThList, 
+    wThList: wThList, 
     imagePointsList: imagePointsList, 
     objectPoints: objectPoints, 
     cameraCalibration: cameraCalibration,
-    handToEyeEstimate: Pose3(),
-    worldToObjectEstimate: Pose3())
+    hTeEstimate: Pose3(),
+    wToEstimate: Pose3())
 
   // print("Factor graph, image point measurements")
   print("Estimated hand-to-eye: \(hTe_fgImagePoints)")
