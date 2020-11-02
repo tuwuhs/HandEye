@@ -300,13 +300,13 @@ public func calibrateHandEye_factorGraphImagePointsNoObject(
     let imagePoints = imagePointsList[i]
     assert(imagePoints.count == objectPoints.count)
 
-    // let eToID = x.store(eToEstimates[i])
-    let eToID = x.store(Pose3(
-      Rot3(
-        -1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 0.0, -1.0), 
-      Vector3(-0.11, -0.11, 0.1)))
+    let eToID = x.store(eToEstimates[i])
+    // let eToID = x.store(Pose3(
+    //   Rot3(
+    //     -1.0, 0.0, 0.0,
+    //     0.0, 1.0, 0.0,
+    //     0.0, 0.0, -1.0), 
+    //   Vector3(-0.11, -0.11, 0.1)).inverse())
     eToIDList.append(eToID)
 
     graph.store(HandEyePoseNoObjectFactor(hTeID, eToID, wTh[i]))
@@ -316,7 +316,7 @@ public func calibrateHandEye_factorGraphImagePointsNoObject(
   }
 
   var opt = LM(precision: 1e-6, max_iteration: 100)
-  opt.verbosity = .TRYLAMBDA
+  // opt.verbosity = .TRYLAMBDA
   opt.max_inner_iteration = 120
   try? opt.optimize(graph: graph, initial: &x)
 

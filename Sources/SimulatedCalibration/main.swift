@@ -22,7 +22,7 @@ func main() {
   }
 
   // Project points
-  let objectPoints = createTargetObject(rows: 7, cols: 5, dimension: 0.15)
+  let objectPoints = createTargetObject(rows: 3, cols: 3, dimension: 0.25)
   let cameraCalibration = CameraCalibration(fx: 300.0, fy: 300.0, s: 0.0, u0: 320.0, v0: 240.0)
   let imagePointsList = projectPoints(eToList: eToList, objectPoints: objectPoints, calibration: cameraCalibration)
   assert(imagePointsList.allSatisfy { $0.allSatisfy { $0.x >= 0 && $0.x < 640 && $0.y >= 0 && $0.y < 480 } },
