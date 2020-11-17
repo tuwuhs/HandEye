@@ -2,6 +2,7 @@
 import Dispatch
 import HandEye
 import SwiftFusion
+import Yams
 
 func main() {
   // let (wThList, eToList, hTe, wTo) = simulatePoseEyeInHand(nPoses: 10, addNoise: true)
@@ -87,4 +88,24 @@ func main() {
   print()
 }
 
-main()
+// main()
+
+struct S: Codable {
+  var p: Int
+  var q: String
+}
+
+let R = Rot3()
+let s = S(p: 42, q: "Hello")
+let encoder = YAMLEncoder()
+let encodedYAML = try encoder.encode(s)
+print(encodedYAML)
+
+let map: Yams.Node = [
+  "hello": [1, 2, 3],
+  "yeah": [
+    "hello": [1, 2, 3],
+    "ahyeah": ["a", "b"]]
+]
+let yaml = try Yams.serialize(node: map)
+print(yaml)

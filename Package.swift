@@ -17,6 +17,7 @@ let package = Package(
     // .package(url: /* package url */, from: "1.0.0"),
     // .package(name: "Benchmark", url: "https://github.com/google/swift-benchmark.git", .branch("master")),
     .package(url: "https://github.com/tuwuhs/SwiftFusion.git", .branch("master")),
+    .package(url: "https://github.com/jpsim/Yams.git", from: "4.0.1"),
   ],
   targets: [
     // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -31,7 +32,7 @@ let package = Package(
       dependencies: ["HandEye"]),
     .target(
       name: "SimulatedCalibration",
-      dependencies: ["HandEye"]),
+      dependencies: ["HandEye", "Yams"]),
     .target(
       name: "Jacobians",
       dependencies: ["HandEye"]),
