@@ -4,7 +4,7 @@ import PenguinStructures
 import SwiftFusion
 
 func main() {
-  let K = CameraCalibration(fx: 1.0, fy: 1.0, s: 0.0, u0: 50.0, v0: 50.0)
+  let K = Cal3_S2(fx: 1.0, fy: 1.0, s: 0.0, u0: 50.0, v0: 50.0)
 
   var x = VariableAssignments()
   let camPoseId = x.store(Pose3(

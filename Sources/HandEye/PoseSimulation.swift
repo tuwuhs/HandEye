@@ -190,12 +190,12 @@ public func applyNoise(_ poses: [Pose3], _ stdevTrans: Double, _ stdevRotDeg: Do
 }
 
 /// Returns list of image points and object points.
-public func projectPoints(
-  eToList: [Pose3], objectPoints: [Vector3], calibration: CameraCalibration) 
+public func projectPoints<Calibration: CameraCalibration>(
+  eToList: [Pose3], objectPoints: [Vector3], calibration: Calibration) 
   -> [[Vector2]] {
   eToList.map { eTo -> [Vector2] in 
     let oTe = eTo.inverse()
-    let cam = PinholeCamera(oTe, calibration)
+    let cam = PinholeCamera(calibration, oTe)
     // print(oTe.t)
     return objectPoints.map { op -> Vector2 in 
       let p = cam.project(op)

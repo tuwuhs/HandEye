@@ -6,8 +6,8 @@ import TensorFlow
 // MARK: - Camera resectioning
 
 /// Returns the camera pose oTe
-public func performCameraResectioning(
-    wTh: Pose3, imagePoints: [Vector2], objectPoints: [Vector3], calibration: CameraCalibration) 
+public func performCameraResectioning<Calibration: CameraCalibration>(
+    wTh: Pose3, imagePoints: [Vector2], objectPoints: [Vector3], calibration: Calibration) 
     -> Pose3 {
   var x = VariableAssignments()
   let camPoseId = x.store(Pose3(
@@ -193,11 +193,11 @@ public struct HandEyePoseFactor<Pose: LieGroup>: LinearizableFactor3 {
 }
 
 /// Returns the estimated hTe and wTo transformations
-public func calibrateHandEye_factorGraphImagePoints(
+public func calibrateHandEye_factorGraphImagePoints<Calibration: CameraCalibration>(
     wThList: [Pose3], 
     imagePointsList: [[Vector2]], 
     objectPoints: [Vector3], 
-    cameraCalibration: CameraCalibration,
+    cameraCalibration: Calibration,
     hTeEstimate: Pose3,
     wToEstimate: Pose3) 
     -> (Pose3, Pose3) {
@@ -275,11 +275,11 @@ public struct HandEyePoseNoObjectFactor<Pose: LieGroup>: LinearizableFactor2 {
 }
 
 /// Returns the estimated hTe and wTo transformations
-public func calibrateHandEye_factorGraphImagePointsNoObject(
+public func calibrateHandEye_factorGraphImagePointsNoObject<Calibration: CameraCalibration>(
     wTh: [Pose3], 
     imagePointsList: [[Vector2]], 
     objectPoints: [Vector3], 
-    cameraCalibration: CameraCalibration,
+    cameraCalibration: Calibration,
     hTeEstimate: Pose3,
     wToEstimate: Pose3) 
     -> (Pose3, Pose3) {
