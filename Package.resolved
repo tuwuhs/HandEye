@@ -6,7 +6,7 @@
         "repositoryURL": "https://github.com/saeta/penguin.git",
         "state": {
           "branch": "master",
-          "revision": "b7774c166e73a8d75c40ef74b75983305cb5a17c",
+          "revision": "0e1d0310b1aa3a758d8d611eda8d2fd8c71f4b65",
           "version": null
         }
       },
@@ -15,7 +15,7 @@
         "repositoryURL": "https://github.com/google/swift-benchmark.git",
         "state": {
           "branch": "master",
-          "revision": "9a47e0326086f7e0b2a8c69e56217485fd9aa80d",
+          "revision": "8e0ef8bb7482ab97dcd2cd1d6855bd38921c345d",
           "version": null
         }
       },
@@ -41,8 +41,8 @@
         "package": "SwiftFusion",
         "repositoryURL": "https://github.com/tuwuhs/SwiftFusion.git",
         "state": {
-          "branch": "dev-handeye",
-          "revision": "56af73cc14c29d500d77cb115b086b6e67f5a33f",
+          "branch": "master",
+          "revision": "b4e327035b023fb4a255cdcafb8b0d466553ff44",
           "version": null
         }
       },
