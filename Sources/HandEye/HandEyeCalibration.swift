@@ -234,18 +234,18 @@ public func calibrateHandEye_factorGraphImagePoints(
     }
   }
 
-  var opt = LM(precision: 1e-6, max_iteration: 200)
-  // opt.verbosity = .TRYLAMBDA
-  opt.max_inner_iteration = 120
-  try? opt.optimize(graph: graph, initial: &x)
+  // var opt = LM(precision: 1e-6, max_iteration: 200)
+  // // opt.verbosity = .TRYLAMBDA
+  // opt.max_inner_iteration = 120
+  // try? opt.optimize(graph: graph, initial: &x)
 
-  // for _ in 0..<120 {
-  //   let gfg = graph.linearized(at: x)
-  //   var dx = x.tangentVectorZeros
-  //   var opt = GenericCGLS(precision: 0, max_iteration: 120)
-  //   opt.optimize(gfg: gfg, initial: &dx)
-  //   x.move(along: dx)
-  // }
+  for _ in 0..<120 {
+    let gfg = graph.linearized(at: x)
+    var dx = x.tangentVectorZeros
+    var opt = GenericCGLS(precision: 0, max_iteration: 120)
+    opt.optimize(gfg: gfg, initial: &dx)
+    x.move(along: dx)
+  }
 
   // Error vectors
   // print(cam2Gripper.localCoordinate(x[hTeID]))
