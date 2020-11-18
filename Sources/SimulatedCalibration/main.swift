@@ -1,105 +1,24 @@
 
+import ArgumentParser
 import Dispatch
+import Foundation
 import HandEye
 import SwiftFusion
 import Yams
 
-extension Vector3 {
-  func toYaml() -> Yams.Node {
-    try! Yams.Node.sequence(
-      Yams.Node.Sequence([x.represented(), y.represented(), z.represented()], .implicit, .flow))
-  }
+struct Options: ParsableArguments {
+  @Option(name: .shortAndLong, help: "Save generated dataset into filename (YAML)")
+  var saveFilename: String?
 
-  static func fromYaml(_ node: Yams.Node) -> Self {
-    let seq = node.sequence!
-    return Vector3((seq[0].float)!, (seq[1].float)!, (seq[2].float)!)
-  }
-}
-
-extension Vector2 {
-  func toYaml() -> Yams.Node {
-    try! Yams.Node.sequence(
-      Yams.Node.Sequence([x.represented(), y.represented()], .implicit, .flow))
-  }
-
-  static func fromYaml(_ node: Yams.Node) -> Self {
-    let seq = node.sequence!
-    return Vector2((seq[0].float)!, (seq[1].float)!)
-  }
-}
-
-extension Array where Element == Vector3 {
-  func toYaml() -> Yams.Node {
-    var seq: Yams.Node.Sequence = []
-    for v in self {
-      seq.append(v.toYaml())
-    }
-    return Yams.Node.sequence(seq)
-  }
-
-  static func fromYaml(_ node: Yams.Node) -> Self {
-    node.sequence!.map { .fromYaml($0) }
-  }
-}
-
-extension Array where Element == Vector2 {
-  func toYaml() -> Yams.Node {
-    var seq: Yams.Node.Sequence = []
-    for v in self {
-      seq.append(v.toYaml())
-    }
-    return Yams.Node.sequence(seq)
-  }
-
-  static func fromYaml(_ node: Yams.Node) -> Self {
-    node.sequence!.map { .fromYaml($0) }
-  }
-}
-
-extension Pose3 {
-  func toYaml() -> Yams.Node {
-    let rvec = self.rot.toRvec()
-    let tvec = self.t
-    let node: Yams.Node = [
-      "rvec": rvec.toYaml(),
-      "tvec": tvec.toYaml()]
-    return node
-  }
-
-  static func fromYaml(_ node: Yams.Node) -> Self {
-    let rvec: Vector3 = .fromYaml(node["rvec"]!)
-    let tvec: Vector3 = .fromYaml(node["tvec"]!)
-    return Pose3(Rot3.fromRvec(rvec), tvec)
-  }
-}
-
-extension Cal3_S2 {
-  func toYaml() -> Yams.Node {
-    try! Yams.Node.mapping([
-      "fx": coordinate.fx.represented(),
-      "fy": coordinate.fy.represented(),
-      "s": coordinate.s.represented(),
-      "u0": coordinate.u0.represented(),
-      "v0": coordinate.v0.represented(),
-    ])
-  }
-
-  static func fromYaml(_ node: Yams.Node) -> Self {
-    Cal3_S2(
-      fx: (node["fx"]!.float)!,
-      fy: (node["fy"]!.float)!,
-      s: (node["s"]!.float)!,
-      u0: (node["u0"]!.float)!,
-      v0: (node["v0"]!.float)!
-    )
-  }
+  @Option(name: .shortAndLong, help: "Load dataset from filename (YAML), do not generate dataset")
+  var loadFilename: String?
 }
 
 func generateDataset() -> (String, [Pose3], [Pose3], Pose3, Pose3) {
   // let (wThList, eToList, hTe, wTo) = simulatePoseEyeInHand(nPoses: 10, addNoise: true)
   
   var (wThList, eToList, hTe, wTo) = simulatePoseKoide(eTh: Pose3(
-    Rot3(),
+    Rot3.fromRvec(Vector3(0.1, -0.1, 0.1)),
     Vector3(0.1, -0.1, 0.05)))
 
   // Project points
@@ -150,36 +69,61 @@ func readDataset(_ yaml: String) -> ([Vector3], [[Vector2]], [Pose3], Cal3_S2) {
 }
 
 func main() {
-  let (yaml, _, eToList, hTe, wTo) = generateDataset()
+  let options = Options.parseOrExit()
 
-  let printError = { (handToEye: Pose3) in 
-    print("Errors:")
-    print("rvec: \(handToEye.rot.toRvec() - hTe.rot.toRvec())")
-    print("tvec: \(handToEye.t - hTe.t)")
-  }
-
-  let printErrorMagnitude = { (handToEye: Pose3) in 
-    print("rvec: \((handToEye.rot.toRvec() - hTe.rot.toRvec()).norm)")
-    print("tvec: \((handToEye.t - hTe.t).norm)")
+  // Initialize with identity to make it simpler
+  var eToList: [Pose3]?
+  var hTe: Pose3?
+  var wTo: Pose3?
+  var yaml: String = ""
+  if let loadFilename = options.loadFilename {
+    let path = URL(fileURLWithPath: loadFilename)
+    yaml = String(data: try! Data(contentsOf: path), encoding: .utf8)!
+    print("Loaded dataset from \(loadFilename).")
+  } else {
+    (yaml, _, eToList, hTe, wTo) = generateDataset()
+    if let saveFilename = options.saveFilename {
+      let path = URL(fileURLWithPath: saveFilename)
+      try! yaml.write(to: path, atomically: true, encoding: .utf8)
+      print("Saved dataset to \(saveFilename).")
+    }
   }
 
   let (objectPoints, imagePointsList, wThList, cameraCalibration) = readDataset(yaml)
+  
+  let printError = { (handToEye: Pose3) in 
+    print("Errors:")
+    if let hTe = hTe {
+      print("rvec: \(handToEye.rot.toRvec() - hTe.rot.toRvec())")
+      print("tvec: \(handToEye.t - hTe.t)")
+    }
+  }
+
+  let printErrorMagnitude = { (handToEye: Pose3) in 
+    if let hTe = hTe {
+      print("rvec: \((handToEye.rot.toRvec() - hTe.rot.toRvec()).norm)")
+      print("tvec: \((handToEye.t - hTe.t).norm)")
+    }
+  }
 
   // Try camera resectioning
   for i in 0..<wThList.count {
     let imagePoints = imagePointsList[i]
-    let eTo = eToList[i]
 
     let eTo_estimate = performCameraResectioning(
       imagePoints: imagePoints, objectPoints: objectPoints, calibration: cameraCalibration)
     
     print(eTo_estimate)
-    print(eTo)
-    print()
 
+    if let eToList = eToList {
+      let eTo = eToList[i]
+      print(eTo)
+    }
+
+    print()
     // break
   }
-
+  
   print("Actual hand-to-eye: \(hTe)")
   print("Actual world-to-object: \(wTo)")
   print()
