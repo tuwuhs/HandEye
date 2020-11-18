@@ -95,13 +95,22 @@ extension Cal3_S2 {
   }
 }
 
-func generateDataset(_ wThList: [Pose3], _ eToList: [Pose3], _ hTe: Pose3, _ wTo: Pose3) -> String {
+func generateDataset() -> (String, [Pose3], [Pose3], Pose3, Pose3) {
+  // let (wThList, eToList, hTe, wTo) = simulatePoseEyeInHand(nPoses: 10, addNoise: true)
+  
+  var (wThList, eToList, hTe, wTo) = simulatePoseKoide(eTh: Pose3(
+    Rot3(),
+    Vector3(0.1, -0.1, 0.05)))
+
   // Project points
   let objectPoints = createTargetObject(rows: 3, cols: 3, dimension: 0.25)
   let cameraCalibration = Cal3_S2(fx: 300.0, fy: 300.0, s: 0.0, u0: 320.0, v0: 240.0)
   let imagePointsList = projectPoints(eToList: eToList, objectPoints: objectPoints, calibration: cameraCalibration)
   assert(imagePointsList.allSatisfy { $0.allSatisfy { $0.x >= 0 && $0.x < 640 && $0.y >= 0 && $0.y < 480 } },
     "Some image points fall outside the image boundary")
+
+  // Add pose noise
+  // wThList = applyNoise(wThList, 0.01, 0.1)
 
   var root: Yams.Node = [:]
   root["object_points"] = objectPoints.toYaml()
@@ -120,12 +129,11 @@ func generateDataset(_ wThList: [Pose3], _ eToList: [Pose3], _ hTe: Pose3, _ wTo
   root["views"] = Yams.Node.sequence(views)
 
   let yaml = try! Yams.serialize(node: root)
-  print(yaml)
 
-  return yaml
+  return (yaml, wThList, eToList, hTe, wTo)
 }
 
-func processDataset(_ yaml: String) -> (Pose3, Pose3) {
+func readDataset(_ yaml: String) -> ([Vector3], [[Vector2]], [Pose3], Cal3_S2) {
   let root = try! Yams.compose(yaml: yaml)!
 
   var wThList: [Pose3] = []
@@ -138,40 +146,12 @@ func processDataset(_ yaml: String) -> (Pose3, Pose3) {
   let objectPoints: [Vector3] = .fromYaml(root["object_points"]!)
   let cameraCalibration: Cal3_S2 = .fromYaml(root["camera_calibration"]!)
 
-  // Try camera resectioning
-  for i in 0..<wThList.count {
-    let imagePoints = imagePointsList[i]
-    let wTh = wThList[i]
-
-    let oTe_estimate = performCameraResectioning(
-      imagePoints: imagePoints, objectPoints: objectPoints, calibration: cameraCalibration)
-    
-    print(oTe_estimate)
-    print()
-
-    // break
-  }
-
-  let (hTe_fgImagePoints, wTo_fgImagePoints) = calibrateHandEye_factorGraphImagePoints(
-    wThList: wThList, 
-    imagePointsList: imagePointsList, 
-    objectPoints: objectPoints, 
-    cameraCalibration: cameraCalibration,
-    hTeEstimate: Pose3(),
-    wToEstimate: Pose3())
-  
-  return (hTe_fgImagePoints, wTo_fgImagePoints)
+  return (objectPoints, imagePointsList, wThList, cameraCalibration)
 }
 
 func main() {
-  // let (wThList, eToList, hTe, wTo) = simulatePoseEyeInHand(nPoses: 10, addNoise: true)
-  
-  var (wThList, eToList, hTe, wTo) = simulatePoseKoide(eTh: Pose3(
-    Rot3(),
-    Vector3(0.1, -0.1, 0.05)))
-  // wThList = [wThList[1], wThList[5], wThList[12]]
-  // eToList = [eToList[1], eToList[5], eToList[12]]
-  
+  let (yaml, _, eToList, hTe, wTo) = generateDataset()
+
   let printError = { (handToEye: Pose3) in 
     print("Errors:")
     print("rvec: \(handToEye.rot.toRvec() - hTe.rot.toRvec())")
@@ -183,28 +163,22 @@ func main() {
     print("tvec: \((handToEye.t - hTe.t).norm)")
   }
 
-  // Add pose noise
-  // wThList = applyNoise(wThList, 0.01, 0.1)
-
-  let yaml = generateDataset(wThList, eToList, hTe, wTo)
-
-  
-  let (hTe_fgImagePoints, wTo_fgImagePoints) = processDataset(yaml)
+  let (objectPoints, imagePointsList, wThList, cameraCalibration) = readDataset(yaml)
 
   // Try camera resectioning
-  // for i in 0..<wThList.count {
-  //   let imagePoints = imagePointsList[i]
-  //   let wTh = wThList[i]
+  for i in 0..<wThList.count {
+    let imagePoints = imagePointsList[i]
+    let eTo = eToList[i]
 
-  //   let oTe_estimate = performCameraResectioning(
-  //     imagePoints: imagePoints, objectPoints: objectPoints, calibration: cameraCalibration)
+    let eTo_estimate = performCameraResectioning(
+      imagePoints: imagePoints, objectPoints: objectPoints, calibration: cameraCalibration)
     
-  //   print(oTe_estimate)
-  //   print((wTo.inverse() * wTh * hTe).inverse())
-  //   print()
+    print(eTo_estimate)
+    print(eTo)
+    print()
 
-  //   // break
-  // }
+    // break
+  }
 
   print("Actual hand-to-eye: \(hTe)")
   print("Actual world-to-object: \(wTo)")
@@ -227,13 +201,13 @@ func main() {
   // printErrorMagnitude(hTe_factorGraphPose)
   // // print()
 
-  // let (hTe_fgImagePoints, wTo_fgImagePoints) = calibrateHandEye_factorGraphImagePoints(
-  //   wThList: wThList, 
-  //   imagePointsList: imagePointsList, 
-  //   objectPoints: objectPoints, 
-  //   cameraCalibration: cameraCalibration,
-  //   hTeEstimate: Pose3(),
-  //   wToEstimate: Pose3())
+  let (hTe_fgImagePoints, wTo_fgImagePoints) = calibrateHandEye_factorGraphImagePoints(
+    wThList: wThList, 
+    imagePointsList: imagePointsList, 
+    objectPoints: objectPoints, 
+    cameraCalibration: cameraCalibration,
+    hTeEstimate: Pose3(),
+    wToEstimate: Pose3())
 
   // print("Factor graph, image point measurements")
   print("Estimated hand-to-eye: \(hTe_fgImagePoints)")
@@ -246,24 +220,3 @@ func main() {
 }
 
 main()
-
-// let p = "abc"
-// var map: Yams.Node = [
-//   "hello": [try p.represented(), 2, 3],
-//   "yeah": [
-//     "hello": [1, 2, 3],
-//     "ahyeah": ["a", "b"]]
-// ]
-// map["ah"] = ["abc": 259]
-
-// var seq: Yams.Node = [1, 3, 5]
-// map["oh"] = seq
-
-// map["pose"] = Pose3().toYaml()
-
-// let yaml = try Yams.serialize(node: map)
-// print(yaml)
-
-// print((map["hello"]?[0]?.any)!)
-// print(type(of: (map["hello"]?[0]?.any)!))
-
