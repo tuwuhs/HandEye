@@ -7,7 +7,7 @@ import TensorFlow
 
 /// Returns the camera pose oTe
 public func performCameraResectioning<Calibration: CameraCalibration>(
-    wTh: Pose3, imagePoints: [Vector2], objectPoints: [Vector3], calibration: Calibration) 
+    imagePoints: [Vector2], objectPoints: [Vector3], calibration: Calibration) 
     -> Pose3 {
   var x = VariableAssignments()
   let camPoseId = x.store(Pose3(
