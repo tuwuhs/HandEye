@@ -152,20 +152,21 @@ func main() {
   // printErrorMagnitude(hTe_factorGraphPose)
   // // print()
 
-  // let (hTe_fgImagePoints, wTo_fgImagePoints) = calibrateHandEye_factorGraphImagePoints(
-  //   wThList: wThList, 
-  //   imagePointsList: imagePointsList, 
-  //   objectPoints: objectPoints, 
-  //   cameraCalibration: cameraCalibration,
-  //   hTeEstimate: Pose3(),
-  //   wToEstimate: Pose3())
+  let (hTe_fgImagePoints, wTo_fgImagePoints) = calibrateHandEye_factorGraphImagePoints(
+    wThList: wThList, 
+    imagePointsList: imagePointsList, 
+    objectPoints: objectPoints, 
+    cameraCalibration: cameraCalibration,
+    hTeEstimate: Pose3(),
+    wToEstimate: Pose3())
 
-  // print("Factor graph, image point measurements")
-  // print("Estimated hand-to-eye: \(hTe_fgImagePoints)")
-  // print("Estimated world-to-object: \(wTo_fgImagePoints)")
-  // // printError(hTe_fgImagePoints)
-  // printErrorMagnitude(hTe_fgImagePoints)
-  // print()
+  print("Factor graph, image point measurements")
+  print("Estimated hand-to-eye: \(hTe_fgImagePoints)")
+  print("Estimated world-to-object: \(wTo_fgImagePoints)")
+  print("Estimated object-to-world: \(wTo_fgImagePoints.inverse())")
+  // printError(hTe_fgImagePoints)
+  printErrorMagnitude(hTe_fgImagePoints)
+  print()
 
   print()
 }

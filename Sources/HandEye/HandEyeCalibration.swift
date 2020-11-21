@@ -222,10 +222,10 @@ public func calibrateHandEye_factorGraphImagePoints<Calibration: CameraCalibrati
     let eToID = x.store(eToEstimates[i])
     // let eToID = x.store(Pose3(
     //   Rot3(
-    //     -1.0, 0.0, 0.0,
-    //     0.0, 1.0, 0.0,
+    //     1.0, 0.0, 0.0,
+    //     0.0, -1.0, 0.0,
     //     0.0, 0.0, -1.0), 
-    //   Vector3(-0.1, -0.1, 0.1)).inverse())
+    //   Vector3(-0.1, -0.1, 0.1)))
     eToIDList.append(eToID)
 
     graph.store(HandEyePoseFactor(hTeID, wToID, eToID, wThList[i]))
