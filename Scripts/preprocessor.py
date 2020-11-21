@@ -109,7 +109,7 @@ def calibrate_camera(target_points, image_points, image_size):
   camera_info.image_height = image_size[1]
   camera_info.camera_matrix = K
   camera_info.distortion_coefficients = dist
-  return camera_info
+  return camera_info, rvecs, tvecs
 
 
 def read_poses_koide(path):
@@ -173,17 +173,23 @@ def update_object_points(data_dict, target_points):
   return data_dict
 
 
-def update_views(data_dict, image_points, rvecs, tvecs):
-  assert len(image_points) == len(rvecs)
-  assert len(rvecs) == len(tvecs)
+def update_views(data_dict, image_points, wTh_rvecs, wTh_tvecs, eTo_rvecs, eTo_tvecs):
+  assert len(image_points) == len(wTh_rvecs)
+  assert len(wTh_rvecs) == len(wTh_tvecs)
+  assert len(wTh_tvecs) == len(eTo_rvecs)
+  assert len(eTo_rvecs) == len(eTo_tvecs)
 
   views = [{
       'image_points': ip.reshape((-1, 2)).tolist(),
       'wTh': {
-        'rvec': r.tolist(),
-        'tvec': t.tolist()
+        'rvec': r1.flatten().tolist(),
+        'tvec': t1.flatten().tolist()
+      },
+      'eTo': {
+        'rvec': r2.flatten().tolist(),
+        'tvec': t2.flatten().tolist()
       }
-    } for ip, r, t in zip(image_points, rvecs, tvecs)]
+    } for ip, r1, t1, r2, t2 in zip(image_points, wTh_rvecs, wTh_tvecs, eTo_rvecs, eTo_tvecs)]
   data_dict['views'] = views
 
   return views

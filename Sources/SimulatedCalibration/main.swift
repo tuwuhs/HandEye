@@ -52,20 +52,22 @@ func generateDataset() -> (String, [Pose3], [Pose3], Pose3, Pose3) {
   return (yaml, wThList, eToList, hTe, wTo)
 }
 
-func readDataset(_ yaml: String) -> ([Vector3], [[Vector2]], [Pose3], Cal3_S2) {
+func readDataset(_ yaml: String) -> ([Vector3], [[Vector2]], [Pose3], [Pose3], Cal3_S2) {
   let root = try! Yams.compose(yaml: yaml)!
 
   var wThList: [Pose3] = []
+  var eToList: [Pose3] = []
   var imagePointsList: [[Vector2]] = []
   for view in (root["views"]?.sequence)! {
     wThList.append(.fromYaml(view["wTh"]!))
+    eToList.append(.fromYaml(view["eTo"]!))
     imagePointsList.append(.fromYaml(view["image_points"]!))
   }
   
   let objectPoints: [Vector3] = .fromYaml(root["object_points"]!)
   let cameraCalibration: Cal3_S2 = .fromYaml(root["camera_calibration"]!)
 
-  return (objectPoints, imagePointsList, wThList, cameraCalibration)
+  return (objectPoints, imagePointsList, wThList, eToList, cameraCalibration)
 }
 
 func main() {
@@ -88,7 +90,10 @@ func main() {
     }
   }
 
-  let (objectPoints, imagePointsList, wThList, cameraCalibration) = readDataset(yaml)
+  let (objectPoints, imagePointsList, wThList, eToList_, cameraCalibration) = readDataset(yaml)
+  if eToList == nil {
+    eToList = eToList_
+  }
   
   let printError = { (handToEye: Pose3) in 
     print("Errors:")

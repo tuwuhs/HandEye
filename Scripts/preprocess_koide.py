@@ -33,16 +33,16 @@ elif args.pattern_type == 2:
 
 print("Reading input files...")
 image_points, image_size = read_and_detect_image_points(args.path, tuple(args.pattern_size), flags, is_circles_grid)
-rvecs, tvecs = read_poses_koide(args.path)
+wTh_rvecs, wTh_tvecs = read_poses_koide(args.path)
 
 print("Calibrating camera intrinsic parameters...")
 target_points = create_target_points(args.pattern_size, args.square_size, (flags & cv2.CALIB_CB_ASYMMETRIC_GRID) != 0)
-camera_info = calibrate_camera(target_points, image_points, image_size)
+camera_info, eTo_rvecs, eTo_tvecs = calibrate_camera(target_points, image_points, image_size)
 
 data_dict = {}
 update_camera_info(data_dict, camera_info)
 update_object_points(data_dict, target_points)
-update_views(data_dict, image_points, rvecs, tvecs)
+update_views(data_dict, image_points, wTh_rvecs, wTh_tvecs, eTo_rvecs, eTo_tvecs)
 
 with open(args.out, 'w') as f:
   yaml.dump(data_dict, f)

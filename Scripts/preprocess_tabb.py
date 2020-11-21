@@ -42,16 +42,16 @@ image_points, image_size = read_and_detect_image_points(images_path, pattern_siz
 
 print("Reading poses...")
 robot_cali_file = os.path.join(args.path, 'robot_cali.txt')
-rvecs, tvecs = read_poses_tabb(robot_cali_file)
+wTh_rvecs, wTh_tvecs = read_poses_tabb(robot_cali_file)
 
 print("Calibrating camera intrinsic parameters...")
 target_points = create_target_points(pattern_size, square_size)
-camera_info = calibrate_camera(target_points, image_points, image_size)
+camera_info, eTo_rvecs, eTo_tvecs = calibrate_camera(target_points, image_points, image_size)
 
 data_dict = {}
 update_camera_info(data_dict, camera_info)
 update_object_points(data_dict, target_points)
-update_views(data_dict, image_points, rvecs, tvecs)
+update_views(data_dict, image_points, wTh_rvecs, wTh_tvecs, eTo_rvecs, eTo_tvecs)
 
 with open(args.out, 'w') as f:
   yaml.dump(data_dict, f)
