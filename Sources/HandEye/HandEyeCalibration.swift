@@ -12,8 +12,8 @@ public func performCameraResectioning<Calibration: CameraCalibration>(
   var x = VariableAssignments()
   let camPoseId = x.store(Pose3(
     Rot3(
-      -1.0, 0.0, 0.0,
-      0.0, 1.0, 0.0,
+      1.0, 0.0, 0.0,
+      0.0, -1.0, 0.0,
       0.0, 0.0, -1.0), 
     Vector3(-0.1, -0.1, 0.1)))
 

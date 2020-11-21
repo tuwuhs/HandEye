@@ -13,7 +13,7 @@ parser.add_argument('-p', '--pattern_size', type=int, nargs=2, metavar=("W", "H"
   help="Target pattern size")
 parser.add_argument('-t', '--pattern_type', type=int, metavar="TYPE", default=1,
   help="0: chessboard, 1: asymmetric circles grid, 2: symmetric circles grid")
-parser.add_argument('-s', '--square_size', type=float, metavar="SIZE", default=0.02,
+parser.add_argument('-s', '--square_size', type=float, metavar="SIZE", default=0.016,
   help="Real world dimension of the target")
 parser.add_argument('-o', '--out', type=str, metavar="FILENAME", default='out.yaml',
   help="Output filename (YAML)")

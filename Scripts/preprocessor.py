@@ -41,7 +41,8 @@ def create_target_points(pattern_size, square_size, is_asymmetric_grid=False):
   if is_asymmetric_grid:
     for i in range(0, pattern_size[1]):
       for j in range(0, pattern_size[0]):
-        target_points.append(np.array([(2*j + i%2)*square_size, i*square_size, 0]))
+        # target_points.append(np.array([(2*j + i%2)*square_size, i*square_size, 0]))
+        target_points.append(np.array([i*square_size, (2*j + i%2)*square_size, 0]))
   else:
     for i in range(0, pattern_size[1]):
       for j in range(0, pattern_size[0]):

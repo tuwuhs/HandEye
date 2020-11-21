@@ -60,6 +60,7 @@ func readDataset(_ yaml: String) -> ([Vector3], [[Vector2]], [Pose3], [Pose3], C
   var imagePointsList: [[Vector2]] = []
   for view in (root["views"]?.sequence)! {
     wThList.append(.fromYaml(view["wTh"]!))
+    // TODO: Handle when no eTo in YAML!
     eToList.append(.fromYaml(view["eTo"]!))
     imagePointsList.append(.fromYaml(view["image_points"]!))
   }
@@ -137,6 +138,7 @@ func main() {
   print("Tsai's method")
   print("Estimated hand-to-eye: \(hTe_tsai)")
   print("Estimated world-to-object: \(wTo_tsai)")
+  print("Estimated object-to-world: \(wTo_tsai.inverse())")
   // printError(hTe_tsai)
   printErrorMagnitude(hTe_tsai)
   print()
@@ -150,20 +152,20 @@ func main() {
   // printErrorMagnitude(hTe_factorGraphPose)
   // // print()
 
-  let (hTe_fgImagePoints, wTo_fgImagePoints) = calibrateHandEye_factorGraphImagePoints(
-    wThList: wThList, 
-    imagePointsList: imagePointsList, 
-    objectPoints: objectPoints, 
-    cameraCalibration: cameraCalibration,
-    hTeEstimate: Pose3(),
-    wToEstimate: Pose3())
+  // let (hTe_fgImagePoints, wTo_fgImagePoints) = calibrateHandEye_factorGraphImagePoints(
+  //   wThList: wThList, 
+  //   imagePointsList: imagePointsList, 
+  //   objectPoints: objectPoints, 
+  //   cameraCalibration: cameraCalibration,
+  //   hTeEstimate: Pose3(),
+  //   wToEstimate: Pose3())
 
-  print("Factor graph, image point measurements")
-  print("Estimated hand-to-eye: \(hTe_fgImagePoints)")
-  print("Estimated world-to-object: \(wTo_fgImagePoints)")
-  // printError(hTe_fgImagePoints)
-  printErrorMagnitude(hTe_fgImagePoints)
-  print()
+  // print("Factor graph, image point measurements")
+  // print("Estimated hand-to-eye: \(hTe_fgImagePoints)")
+  // print("Estimated world-to-object: \(wTo_fgImagePoints)")
+  // // printError(hTe_fgImagePoints)
+  // printErrorMagnitude(hTe_fgImagePoints)
+  // print()
 
   print()
 }
