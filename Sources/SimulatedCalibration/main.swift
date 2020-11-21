@@ -22,14 +22,14 @@ func generateDataset() -> (String, [Pose3], [Pose3], Pose3, Pose3) {
     Vector3(0.1, -0.1, 0.05)))
 
   // Project points
-  let objectPoints = createTargetObject(rows: 3, cols: 3, dimension: 0.25)
+  let objectPoints = createTargetObject(rows: 7, cols: 5, dimension: 0.15)
   let cameraCalibration = Cal3_S2(fx: 300.0, fy: 300.0, s: 0.0, u0: 320.0, v0: 240.0)
   let imagePointsList = projectPoints(eToList: eToList, objectPoints: objectPoints, calibration: cameraCalibration)
   assert(imagePointsList.allSatisfy { $0.allSatisfy { $0.x >= 0 && $0.x < 640 && $0.y >= 0 && $0.y < 480 } },
     "Some image points fall outside the image boundary")
 
   // Add pose noise
-  // wThList = applyNoise(wThList, 0.01, 0.1)
+  wThList = applyNoise(wThList, 0.01, 0.1)
 
   var root: Yams.Node = [:]
   root["object_points"] = objectPoints.toYaml()
@@ -71,7 +71,6 @@ func readDataset(_ yaml: String) -> ([Vector3], [[Vector2]], [Pose3], Cal3_S2) {
 func main() {
   let options = Options.parseOrExit()
 
-  // Initialize with identity to make it simpler
   var eToList: [Pose3]?
   var hTe: Pose3?
   var wTo: Pose3?
@@ -107,19 +106,19 @@ func main() {
   }
 
   // Try camera resectioning
+  var eToList_estimate: [Pose3] = []
   for i in 0..<wThList.count {
     let imagePoints = imagePointsList[i]
 
     let eTo_estimate = performCameraResectioning(
       imagePoints: imagePoints, objectPoints: objectPoints, calibration: cameraCalibration)
-    
-    print(eTo_estimate)
+    eToList_estimate.append(eTo_estimate)
 
+    print(eTo_estimate)
     if let eToList = eToList {
       let eTo = eToList[i]
       print(eTo)
     }
-
     print()
     // break
   }
@@ -128,13 +127,14 @@ func main() {
   print("Actual world-to-object: \(wTo)")
   print()
 
-  // let hTe_tsai = calibrateHandEye_tsai(wThList: wThList, eToList: eToList)
-  // let wTo_tsai = wThList[0] * hTe_tsai * eToList[0]
-  // // print("Tsai's method")
-  // // print("Estimated hand-to-eye: \(hTe_tsai)")
-  // // printError(hTe_tsai)
-  // printErrorMagnitude(hTe_tsai)
-  // // print()
+  let hTe_tsai = calibrateHandEye_tsai(wThList: wThList, eToList: eToList_estimate)
+  let wTo_tsai = wThList[0] * hTe_tsai * eToList_estimate[0]
+  print("Tsai's method")
+  print("Estimated hand-to-eye: \(hTe_tsai)")
+  print("Estimated world-to-object: \(wTo_tsai)")
+  // printError(hTe_tsai)
+  printErrorMagnitude(hTe_tsai)
+  print()
 
   // let (hTe_factorGraphPose, wTo_factorGraphPose) = calibrateHandEye_factorGraphPose(
   //   wThList: wThList, eToList: eToList)
@@ -153,12 +153,12 @@ func main() {
     hTeEstimate: Pose3(),
     wToEstimate: Pose3())
 
-  // print("Factor graph, image point measurements")
+  print("Factor graph, image point measurements")
   print("Estimated hand-to-eye: \(hTe_fgImagePoints)")
   print("Estimated world-to-object: \(wTo_fgImagePoints)")
   // printError(hTe_fgImagePoints)
   printErrorMagnitude(hTe_fgImagePoints)
-  // print()
+  print()
 
   print()
 }
