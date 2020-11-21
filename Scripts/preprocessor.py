@@ -54,7 +54,12 @@ def read_and_detect_image_points(images_path, pattern_size, flags=None, is_circl
 
   image_points = []
   image_size = None
-  for filename in sorted(glob.glob(os.path.join(images_path, '*'))):
+
+  # Natural sort https://stackoverflow.com/questions/33159106/sort-filenames-in-directory-in-ascending-order
+  filenames = glob.glob(os.path.join(images_path, '*'))
+  filenames.sort(key=lambda f: int(''.join(filter(str.isdigit, f))))
+
+  for filename in filenames:
     # Let OpenCV decides if the file is an image
     image = cv2.imread(filename)
     print(filename, end="")
@@ -86,8 +91,9 @@ def read_and_detect_image_points(images_path, pattern_size, flags=None, is_circl
 
 
 def calibrate_camera_from_path(images_path, pattern_size, square_size, flags=None, is_circles_grid=False):
-  target_points = create_target_points(pattern_size, square_size, (flags & cv2.CALIB_CB_ASYMMETRIC_GRID) != 0)
-  image_points, image_size = detect_image_points(images_path, pattern_size, flags, is_circles_grid)
+  is_asymmetric_grid = (flags & cv2.CALIB_CB_ASYMMETRIC_GRID) != 0 if flags is not None else False
+  target_points = create_target_points(pattern_size, square_size, is_asymmetric_grid)
+  image_points, image_size = read_and_detect_image_points(images_path, pattern_size, flags, is_circles_grid)
   
   return calibrate_camera(target_points, image_points, image_size)
 
@@ -109,7 +115,12 @@ def calibrate_camera(target_points, image_points, image_size):
 def read_poses_koide(path):
   rvecs = []
   tvecs = []
-  for filename in sorted(glob.glob(os.path.join(path, '*.csv'))):
+
+  # Natural sort https://stackoverflow.com/questions/33159106/sort-filenames-in-directory-in-ascending-order
+  filenames = glob.glob(os.path.join(path, '*.csv'))
+  filenames.sort(key=lambda f: int(''.join(filter(str.isdigit, f))))
+
+  for filename in filenames:
     pose = []
     with open(filename) as f:
       reader = csv.reader(f, delimiter=' ')
@@ -119,6 +130,29 @@ def read_poses_koide(path):
     rvecs.append(cv2.Rodrigues(pose_homogeneous[:3,:3])[0].flatten())
     tvecs.append(pose_homogeneous[:3,3].flatten())
 
+  return rvecs, tvecs
+
+
+def read_poses_tabb(robot_cali_file):
+  rvecs = []
+  tvecs = []
+
+  with open(robot_cali_file) as f:
+    it = iter(f)
+    num_poses = int(next(f))
+    count = 0
+    pose = []
+    for l in f:
+      val = l.split()
+      if len(val) > 0:
+        pose.extend(val)
+      else:
+        pose_homogeneous = np.array(pose).astype(np.float).reshape((4, 4))
+        rvecs.append(cv2.Rodrigues(pose_homogeneous[:3,:3])[0].flatten())
+        tvecs.append(pose_homogeneous[:3,3].flatten())
+        count += 1
+        pose = []
+  
   return rvecs, tvecs
 
 

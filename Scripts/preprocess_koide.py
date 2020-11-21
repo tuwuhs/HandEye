@@ -35,6 +35,7 @@ print("Reading input files...")
 image_points, image_size = read_and_detect_image_points(args.path, tuple(args.pattern_size), flags, is_circles_grid)
 rvecs, tvecs = read_poses_koide(args.path)
 
+print("Calibrating camera intrinsic parameters...")
 target_points = create_target_points(args.pattern_size, args.square_size, (flags & cv2.CALIB_CB_ASYMMETRIC_GRID) != 0)
 camera_info = calibrate_camera(target_points, image_points, image_size)
 
