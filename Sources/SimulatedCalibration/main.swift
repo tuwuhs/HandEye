@@ -7,10 +7,10 @@ import SwiftFusion
 import Yams
 
 struct Options: ParsableArguments {
-  @Option(name: .shortAndLong, help: "Save generated dataset into filename (YAML)")
+  @Option(name: .shortAndLong, help: "Save the generated dataset into filename (YAML)")
   var saveFilename: String?
 
-  @Option(name: .shortAndLong, help: "Load dataset from filename (YAML), do not generate dataset")
+  @Option(name: .shortAndLong, help: "Load the dataset from filename (YAML), do not generate dataset")
   var loadFilename: String?
 }
 

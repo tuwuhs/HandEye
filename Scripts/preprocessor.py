@@ -164,8 +164,8 @@ def update_camera_info(data_dict, camera_info):
     's': camera_info.camera_matrix[0, 1].item(),
     'u0': camera_info.camera_matrix[0, 2].item(),
     'v0': camera_info.camera_matrix[1, 2].item(),
+    'distortion_coefficients': camera_info.distortion_coefficients.flatten().tolist()
   }
-  data_dict['distortion_coefficients'] = camera_info.distortion_coefficients.flatten().tolist()
   return data_dict
 
 
