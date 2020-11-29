@@ -30,7 +30,7 @@ func main() {
       // Vector3(-0.1, -0.1, 0.1)))
 
     for j in 0..<imagePoints.count {
-      let crf = CameraResectioningFactor(camPoseId, objectPoints[j], imagePoints[j], cameraCalibration)
+      let crf = ResectioningFactor(camPoseId, objectPoints[j], imagePoints[j], cameraCalibration)
 
       // print(imagePoints[j])
       // print(objectPoints[j])

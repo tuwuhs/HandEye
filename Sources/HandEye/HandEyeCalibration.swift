@@ -12,15 +12,21 @@ public func performCameraResectioning<Calibration: CameraCalibration>(
   var x = VariableAssignments()
   let camPoseId = x.store(Pose3(
     Rot3(
-      1.0, 0.0, 0.0,
-      0.0, -1.0, 0.0,
+      -1.0, 0.0, 0.0,
+      0.0, 1.0, 0.0,
       0.0, 0.0, -1.0), 
     Vector3(-0.1, -0.1, 0.1)).inverse())
+  // let camPoseId = x.store(Pose3(
+  //   Rot3(
+  //     1.0, 0.0, 0.0,
+  //     0.0, -1.0, 0.0,
+  //     0.0, 0.0, -1.0), 
+  //   Vector3(-0.1, -0.1, 0.1)).inverse())
 
   var graph = FactorGraph()
 
   for j in 0..<imagePoints.count {
-    graph.store(CameraResectioningFactor(camPoseId, objectPoints[j], imagePoints[j], calibration))
+    graph.store(ResectioningFactor(camPoseId, objectPoints[j], imagePoints[j], calibration))
   }
 
   // var timestamps: [DispatchTime] = []
@@ -222,15 +228,21 @@ public func calibrateHandEye_factorGraphImagePoints<Calibration: CameraCalibrati
     // let eToID = x.store(eToEstimates[i])
     let eToID = x.store(Pose3(
       Rot3(
-        1.0, 0.0, 0.0,
-        0.0, -1.0, 0.0,
+        -1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
         0.0, 0.0, -1.0), 
       Vector3(-0.1, -0.1, 0.1)).inverse())
+    // let eToID = x.store(Pose3(
+    //   Rot3(
+    //     1.0, 0.0, 0.0,
+    //     0.0, -1.0, 0.0,
+    //     0.0, 0.0, -1.0), 
+    //   Vector3(-0.1, -0.1, 0.1)).inverse())
     eToIDList.append(eToID)
 
     graph.store(HandEyePoseFactor(hTeID, wToID, eToID, wThList[i]))
     for j in 0..<imagePoints.count {
-      graph.store(CameraResectioningFactor(eToID, objectPoints[j], imagePoints[j], cameraCalibration))
+      graph.store(ResectioningFactor(eToID, objectPoints[j], imagePoints[j], cameraCalibration))
     }
   }
 
@@ -301,17 +313,23 @@ public func calibrateHandEye_factorGraphImagePointsNoObject<Calibration: CameraC
     assert(imagePoints.count == objectPoints.count)
 
     // let eToID = x.store(eToEstimates[i])
+    // let eToID = x.store(Pose3(
+    //   Rot3(
+    //     -1.0, 0.0, 0.0,
+    //     0.0, 1.0, 0.0,
+    //     0.0, 0.0, -1.0), 
+    //   Vector3(-0.1, -0.1, 0.1)).inverse())
     let eToID = x.store(Pose3(
       Rot3(
-        -1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
+        1.0, 0.0, 0.0,
+        0.0, -1.0, 0.0,
         0.0, 0.0, -1.0), 
-      Vector3(-0.11, -0.11, 0.1)).inverse())
+      Vector3(-0.1, -0.1, 0.1)).inverse())
     eToIDList.append(eToID)
 
     graph.store(HandEyePoseNoObjectFactor(hTeID, eToID, wTh[i]))
     for j in 0..<imagePoints.count {
-      graph.store(CameraResectioningFactor(eToID, objectPoints[j], imagePoints[j], cameraCalibration))
+      graph.store(ResectioningFactor(eToID, objectPoints[j], imagePoints[j], cameraCalibration))
     }
   }
 

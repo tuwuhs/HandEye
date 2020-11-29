@@ -2,7 +2,7 @@
 import PenguinStructures
 import SwiftFusion
 
-public struct CameraResectioningFactor<Calibration: CameraCalibration>: LinearizableFactor1 {
+public struct ResectioningFactor<Calibration: CameraCalibration>: LinearizableFactor1 {
   public let edges: Variables.Indices
 
   /// Camera calibration
@@ -26,7 +26,7 @@ public struct CameraResectioningFactor<Calibration: CameraCalibration>: Lineariz
     // pose is eTo, PinholeCamera takes oTe
     let camera = PinholeCamera(calibration, pose.inverse())
     let reprojectionError = camera.project(objectPoint) - imagePoint
-    // print("CameraResectioningFactor", reprojectionError)
+    // print("ResectioningFactor", reprojectionError)
     return reprojectionError
   }
 }

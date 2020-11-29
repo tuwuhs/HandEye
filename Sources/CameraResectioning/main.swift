@@ -16,10 +16,10 @@ func main() {
 
   var graph = FactorGraph()
 
-  graph.store(CameraResectioningFactor(camPoseId, Vector3(10.0, 10.0, 0.0), Vector2(55, 45), K))
-  graph.store(CameraResectioningFactor(camPoseId, Vector3(-10.0, 10.0, 0.0), Vector2(45, 45), K))
-  graph.store(CameraResectioningFactor(camPoseId, Vector3(-10.0, -10.0, 0.0), Vector2(45, 55), K))
-  graph.store(CameraResectioningFactor(camPoseId, Vector3(10.0, -10.0, 0.0), Vector2(55, 55), K))
+  graph.store(ResectioningFactor(camPoseId, Vector3(10.0, 10.0, 0.0), Vector2(55, 45), K))
+  graph.store(ResectioningFactor(camPoseId, Vector3(-10.0, 10.0, 0.0), Vector2(45, 45), K))
+  graph.store(ResectioningFactor(camPoseId, Vector3(-10.0, -10.0, 0.0), Vector2(45, 55), K))
+  graph.store(ResectioningFactor(camPoseId, Vector3(10.0, -10.0, 0.0), Vector2(55, 55), K))
 
   var optimizer = LM(precision: 1e-6, max_iteration: 500)
   try? optimizer.optimize(graph: graph, initial: &x)
