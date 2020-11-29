@@ -9,7 +9,7 @@ let package = Package(
     // Products define the executables and libraries a package produces, and make them visible to other packages.
     .library(name: "HandEye", targets: ["HandEye"]),
     .executable(name: "CameraResectioning", targets: ["CameraResectioning"]),
-    .executable(name: "SimulatedCalibration", targets: ["SimulatedCalibration"]),
+    .executable(name: "Calibrate", targets: ["Calibrate"]),
     .executable(name: "Jacobians", targets: ["Jacobians"]),
   ],
   dependencies: [
@@ -32,7 +32,7 @@ let package = Package(
       name: "CameraResectioning",
       dependencies: ["HandEye"]),
     .target(
-      name: "SimulatedCalibration",
+      name: "Calibrate",
       dependencies: [
         "HandEye",
         "Yams",
@@ -45,6 +45,13 @@ let package = Package(
       name: "SFMExample",
       dependencies: [
         "HandEye",
+      ]),
+    .target(
+      name: "CalibrateSFM",
+      dependencies: [
+        "HandEye",
+        "Yams",
+        .product(name: "ArgumentParser", package: "swift-argument-parser"),
       ]),
     .testTarget(
       name: "HandEyeTests",

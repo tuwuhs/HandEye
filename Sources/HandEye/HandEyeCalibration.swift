@@ -267,10 +267,14 @@ public func calibrateHandEye_factorGraphImagePoints<Calibration: CameraCalibrati
 }
 
 
-// MARK: - SFM optimizer
+// MARK: - SFM
 
+/// Returns list of poses and list of landmarks.
 public func performSFMOptimization<Calibration: CameraCalibration & Equatable>(
-    imagePointsList: [[Vector2]], objectPointsEstimate: [Vector3], posesEstimate: [Pose3], calibration: Calibration) 
+    imagePointsList: [[Vector2]], 
+    objectPointsEstimate: [Vector3], 
+    posesEstimate: [Pose3], 
+    cameraCalibration: Calibration) 
     -> ([Pose3], [Vector3]) {
   var values = VariableAssignments()
   var graph = FactorGraph()
@@ -288,11 +292,62 @@ public func performSFMOptimization<Calibration: CameraCalibration & Equatable>(
   for i in 0..<posesEstimate.count {
     for j in 0..<objectPointsEstimate.count {
       let measurement = imagePointsList[i][j]
-      graph.store(ProjectionFactor(xIDList[i], lIDList[j], measurement, calibration))
+      graph.store(ProjectionFactor(xIDList[i], lIDList[j], measurement, cameraCalibration))
     }
   }
 
   graph.store(PriorFactor(xIDList[0], posesEstimate[0]))
+  graph.store(VectorPriorFactor(lIDList[0], objectPointsEstimate[0]))
+
+  var optimizer = LM(precision: 1e-6, max_iteration: 200)
+  try? optimizer.optimize(graph: graph, initial: &values)
+
+  // for xID in xIDList {
+  //   print(values[xID])
+  // }
+  // for lID in lIDList {
+  //   print(values[lID])
+  // }
+  
+  return (xIDList.map { values[$0] }, lIDList.map { values[$0] })
+}
+
+/// Returns the estimated hTe and wTo transformations.
+public func calibrateHandEye_SFM<Calibration: CameraCalibration & Equatable>(
+    wThList: [Pose3], 
+    imagePointsList: [[Vector2]], 
+    objectPointsEstimate: [Vector3], 
+    oTeListEstimate: [Pose3],
+    cameraCalibration: Calibration,
+    hTeEstimate: Pose3 = Pose3(),
+    wToEstimate: Pose3 = Pose3()) 
+    -> (Pose3, Pose3) {
+  assert(wThList.count == imagePointsList.count)
+  assert(wThList.count == oTeListEstimate.count)
+  
+  let nPoses = wThList.count
+
+  var values = VariableAssignments()
+  var graph = FactorGraph()
+
+  let hTeID = values.store(hTeEstimate)
+  let wToID = values.store(wToEstimate)
+  let xIDList = oTeListEstimate.map { values.store($0) }
+  let lIDList = objectPointsEstimate.map { values.store($0) }
+
+  for i in 0..<wThList.count {
+    let imagePoints = imagePointsList[i]
+    let wTh = wThList[i]
+
+    graph.store(HandEyePoseFactor(hTeID, wToID, xIDList[i], wTh));
+
+    for j in 0..<objectPointsEstimate.count {
+      let measurement = imagePoints[j]
+      graph.store(ProjectionFactor(xIDList[i], lIDList[j], measurement, cameraCalibration))
+    }
+  }
+
+  graph.store(PriorFactor(xIDList[0], oTeListEstimate[0]))
   graph.store(VectorPriorFactor(lIDList[0], objectPointsEstimate[0]))
 
   // var optimizer = LM(precision: 1e-6, max_iteration: 200)
@@ -301,17 +356,17 @@ public func performSFMOptimization<Calibration: CameraCalibration & Equatable>(
   for _ in 0..<120 {
     let gfg = graph.linearized(at: values)
     var dx = values.tangentVectorZeros
-    var opt = GenericCGLS(precision: 0, max_iteration: 18*6 + 9*3)
+    var opt = GenericCGLS(precision: 0, max_iteration: (2 + xIDList.count) * 6 + lIDList.count * 3)
     opt.optimize(gfg: gfg, initial: &dx)
     values.move(along: dx)
   }
 
-  for xID in xIDList {
-    print(values[xID])
-  }
+  // for xID in xIDList {
+  //   print(values[xID])
+  // }
   for lID in lIDList {
     print(values[lID])
   }
   
-  return ([], [])
+  return (values[hTeID], values[wToID])
 }

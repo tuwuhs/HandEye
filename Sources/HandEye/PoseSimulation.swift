@@ -170,6 +170,35 @@ public func simulatePoseKoide(eTh: Pose3? = nil, wTo: Pose3? = nil) -> ([Pose3],
   return (wThList, eToList, eTh.inverse(), wTo)
 }
 
+public func applyNoise(_ point: Vector3, _ stdevTrans: Double) -> Vector3 {
+  var rng = SystemRandomNumberGenerator()
+  let tnoise = NormalDistribution<Double>(mean: 0.0, standardDeviation: stdevTrans)
+  let noise = tnoise.next(using: &rng) * Vector3(
+      Double.random(in: -1.0...1.0),
+      Double.random(in: -1.0...1.0),
+      Double.random(in: -1.0...1.0)).normalized()
+    
+  return point + noise
+}
+
+public func applyNoise(_ pose: Pose3, _ stdevTrans: Double, _ stdevRotDeg: Double) -> Pose3 {
+  var rng = SystemRandomNumberGenerator()
+  let rnoise = NormalDistribution<Double>(mean: 0.0, standardDeviation: stdevRotDeg * .pi / 180.0)
+  let tnoise = NormalDistribution<Double>(mean: 0.0, standardDeviation: stdevTrans)
+  let noise = Pose3(Rot3.fromAngleAxis(
+    rnoise.next(using: &rng), Vector3(
+      Double.random(in: -1.0...1.0),
+      Double.random(in: -1.0...1.0),
+      Double.random(in: -1.0...1.0)).normalized()), 
+    tnoise.next(using: &rng) * Vector3(
+      Double.random(in: -1.0...1.0),
+      Double.random(in: -1.0...1.0),
+      Double.random(in: -1.0...1.0)).normalized()
+  )
+
+  return noise * pose;
+}
+
 public func applyNoise(_ poses: [Pose3], _ stdevTrans: Double, _ stdevRotDeg: Double) -> [Pose3] {
   var rng = SystemRandomNumberGenerator()
   let rnoise = NormalDistribution<Double>(mean: 0.0, standardDeviation: stdevRotDeg * .pi / 180.0)
