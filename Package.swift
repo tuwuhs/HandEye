@@ -41,6 +41,11 @@ let package = Package(
     .target(
       name: "Jacobians",
       dependencies: ["HandEye"]),
+    .target(
+      name: "SFMExample",
+      dependencies: [
+        "HandEye",
+      ]),
     .testTarget(
       name: "HandEyeTests",
       dependencies: ["HandEye"]),
