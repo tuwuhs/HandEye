@@ -15,13 +15,13 @@ public func performCameraResectioning<Calibration: CameraCalibration>(
       -1.0, 0.0, 0.0,
       0.0, 1.0, 0.0,
       0.0, 0.0, -1.0), 
-    Vector3(-0.1, -0.1, 0.1)).inverse())
+    Vector3(-0.1, -0.1, 0.1)))
   // let camPoseId = x.store(Pose3(
   //   Rot3(
   //     1.0, 0.0, 0.0,
   //     0.0, -1.0, 0.0,
   //     0.0, 0.0, -1.0), 
-  //   Vector3(-0.1, -0.1, 0.1)).inverse())
+  //   Vector3(-0.1, -0.1, 0.1)))
 
   var graph = FactorGraph()
 
@@ -127,20 +127,20 @@ public func calibrateHandEye_tsai(wThList Hg: [Pose3], eToList Hc: [Pose3]) -> P
 
 public struct FixedHandEyePoseFactor<Pose: LieGroup>: LinearizableFactor2 {
   public let edges: Variables.Indices
-  public let eTo: Pose
+  public let oTe: Pose
   public let wTh: Pose
   
-  public init (_ hTeID: TypedID<Pose>, _ wToID: TypedID<Pose>, _ eTo: Pose, _ wTh: Pose) {
+  public init (_ hTeID: TypedID<Pose>, _ wToID: TypedID<Pose>, _ oTe: Pose, _ wTh: Pose) {
     self.edges = Tuple2(hTeID, wToID)
-    self.eTo = eTo
+    self.oTe = oTe
     self.wTh = wTh
   }
 
   @differentiable
   public func errorVector(_ hTe: Pose, _ wTo: Pose) -> Pose.TangentVector {
     // Q: What is the difference? Which error vector is more correct?
-    return wTh.localCoordinate(wTo * eTo.inverse() * hTe.inverse())
-    // return eTo.localCoordinate(hTe.inverse() * wTh.inverse() * wTo)
+    return wTh.localCoordinate(wTo * oTe * hTe.inverse())
+    // return oTe.localCoordinate(wTo.inverse() * wTh * hTe)
   }
 }
 
@@ -185,14 +185,14 @@ public struct HandEyePoseFactor<Pose: LieGroup>: LinearizableFactor3 {
   public let edges: Variables.Indices
   public let wTh: Pose
   
-  public init (_ hTeID: TypedID<Pose>, _ wToID: TypedID<Pose>, _ eToID: TypedID<Pose>, _ wTh: Pose) {
-    self.edges = Tuple3(hTeID, wToID, eToID)
+  public init (_ hTeID: TypedID<Pose>, _ wToID: TypedID<Pose>, _ oTeID: TypedID<Pose>, _ wTh: Pose) {
+    self.edges = Tuple3(hTeID, wToID, oTeID)
     self.wTh = wTh
   }
 
   @differentiable
-  public func errorVector(_ hTe: Pose, _ wTo: Pose, _ eTo: Pose) -> Pose.TangentVector {
-    let error = wTh.localCoordinate(wTo * eTo.inverse() * hTe.inverse())
+  public func errorVector(_ hTe: Pose, _ wTo: Pose, _ oTe: Pose) -> Pose.TangentVector {
+    let error = wTh.localCoordinate(wTo * oTe * hTe.inverse())
     // print("HandEyePoseFactor", error)
     return error
   }
@@ -216,7 +216,7 @@ public func calibrateHandEye_factorGraphImagePoints<Calibration: CameraCalibrati
   let wToID = x.store(wToEstimate)
 
   var graph = FactorGraph()
-  var eToIDList: [TypedID<Pose3>] = []
+  var oTeIDList: [TypedID<Pose3>] = []
   let eToEstimates = wThList.map { wTh -> Pose3 in
     hTeEstimate.inverse() * wTh.inverse() * wToEstimate
   }
@@ -225,24 +225,24 @@ public func calibrateHandEye_factorGraphImagePoints<Calibration: CameraCalibrati
     let imagePoints = imagePointsList[i]
     assert(imagePoints.count == objectPoints.count)
 
-    // let eToID = x.store(eToEstimates[i])
-    let eToID = x.store(Pose3(
+    // let oTeID = x.store(eToEstimates[i])
+    let oTeID = x.store(Pose3(
       Rot3(
         -1.0, 0.0, 0.0,
         0.0, 1.0, 0.0,
         0.0, 0.0, -1.0), 
-      Vector3(-0.1, -0.1, 0.1)).inverse())
-    // let eToID = x.store(Pose3(
+      Vector3(-0.1, -0.1, 0.1)))
+    // let oTeID = x.store(Pose3(
     //   Rot3(
     //     1.0, 0.0, 0.0,
     //     0.0, -1.0, 0.0,
     //     0.0, 0.0, -1.0), 
-    //   Vector3(-0.1, -0.1, 0.1)).inverse())
-    eToIDList.append(eToID)
+    //   Vector3(-0.1, -0.1, 0.1)))
+    oTeIDList.append(oTeID)
 
-    graph.store(HandEyePoseFactor(hTeID, wToID, eToID, wThList[i]))
+    graph.store(HandEyePoseFactor(hTeID, wToID, oTeID, wThList[i]))
     for j in 0..<imagePoints.count {
-      graph.store(ResectioningFactor(eToID, objectPoints[j], imagePoints[j], cameraCalibration))
+      graph.store(ResectioningFactor(oTeID, objectPoints[j], imagePoints[j], cameraCalibration))
     }
   }
 

@@ -22,7 +22,7 @@ func generateDataset() -> (String, [Pose3], [Pose3], Pose3, Pose3) {
     Vector3(0.1, -0.1, 0.05)))
 
   // Project points
-  let objectPoints = createTargetObject(rows: 7, cols: 5, dimension: 0.15)
+  let objectPoints = createTargetObject(rows: 3, cols: 3, dimension: 0.25)
   let cameraCalibration = Cal3_S2(fx: 300.0, fy: 300.0, s: 0.0, u0: 320.0, v0: 240.0)
   let imagePointsList = projectPoints(eToList: eToList, objectPoints: objectPoints, calibration: cameraCalibration)
   assert(imagePointsList.allSatisfy { $0.allSatisfy { $0.x >= 0 && $0.x < 640 && $0.y >= 0 && $0.y < 480 } },
@@ -127,14 +127,14 @@ func main() {
   for i in 0..<wThList.count {
     let imagePoints = imagePointsList[i]
 
-    let eTo_estimate = performCameraResectioning(
+    let oTe_estimate = performCameraResectioning(
       imagePoints: imagePoints, objectPoints: objectPoints, calibration: cameraCalibration)
-    eToList_estimate.append(eTo_estimate)
+    eToList_estimate.append(oTe_estimate.inverse())
 
-    print(eTo_estimate)
+    print(oTe_estimate)
     if let eToList = eToList {
-      let eTo = eToList[i]
-      print(eTo)
+      let oTe = eToList[i].inverse()
+      print(oTe)
     }
     print()
     // break
