@@ -23,9 +23,9 @@
         "package": "Benchmark",
         "repositoryURL": "https://github.com/google/swift-benchmark.git",
         "state": {
-          "branch": "master",
+          "branch": null,
           "revision": "8e0ef8bb7482ab97dcd2cd1d6855bd38921c345d",
-          "version": null
+          "version": "0.1.0"
         }
       },
       {
@@ -33,7 +33,7 @@
         "repositoryURL": "https://github.com/tensorflow/swift-models.git",
         "state": {
           "branch": null,
-          "revision": "99f323e550f7f0c3ed32d31a3c5d11a0f3c51e4b",
+          "revision": "b2fc0325bf9d476bf2d7a4cd0a09d36486c506e4",
           "version": null
         }
       },
@@ -50,8 +50,8 @@
         "package": "SwiftFusion",
         "repositoryURL": "https://github.com/tuwuhs/SwiftFusion.git",
         "state": {
-          "branch": "master",
-          "revision": "b4e327035b023fb4a255cdcafb8b0d466553ff44",
+          "branch": "dev-camera",
+          "revision": "4c6634581a57c524fc64a75bc91d90c7ac76b34a",
           "version": null
         }
       },

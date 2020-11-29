@@ -16,7 +16,7 @@ let package = Package(
     // Dependencies declare other packages that this package depends on.
     // .package(url: /* package url */, from: "1.0.0"),
     // .package(name: "Benchmark", url: "https://github.com/google/swift-benchmark.git", .branch("master")),
-    .package(url: "https://github.com/tuwuhs/SwiftFusion.git", .branch("master")),
+    .package(url: "https://github.com/tuwuhs/SwiftFusion.git", .branch("dev-camera")),
     .package(url: "https://github.com/jpsim/Yams.git", from: "4.0.1"),
     .package(url: "https://github.com/apple/swift-argument-parser", from: "0.3.0"),
   ],
