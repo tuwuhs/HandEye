@@ -18,18 +18,18 @@ func generateDataset() -> (String, [Pose3], [Pose3], Pose3, Pose3) {
   // let (wThList, eToList, hTe, wTo) = simulatePoseEyeInHand(nPoses: 10, addNoise: true)
   
   var (wThList, eToList, hTe, wTo) = simulatePoseKoide(eTh: Pose3(
-    Rot3.fromRvec(Vector3(0.1, -0.1, 0.1)),
+    Rot3(), // Rot3.fromRvec(Vector3(0.1, -0.1, 0.1)),
     Vector3(0.1, -0.1, 0.05)))
 
   // Project points
-  let objectPoints = createTargetObject(rows: 7, cols: 5, dimension: 0.15)
+  let objectPoints = createTargetObject(rows: 3, cols: 3, dimension: 0.25)
   let cameraCalibration = Cal3_S2(fx: 300.0, fy: 300.0, s: 0.0, u0: 320.0, v0: 240.0)
   let imagePointsList = projectPoints(eToList: eToList, objectPoints: objectPoints, calibration: cameraCalibration)
   assert(imagePointsList.allSatisfy { $0.allSatisfy { $0.x >= 0 && $0.x < 640 && $0.y >= 0 && $0.y < 480 } },
     "Some image points fall outside the image boundary")
 
   // Add pose noise
-  wThList = applyNoise(wThList, 0.01, 0.1)
+  // wThList = applyNoise(wThList, 0.01, 0.1)
 
   var root: Yams.Node = [:]
   root["object_points"] = objectPoints.toYaml()
@@ -40,9 +40,11 @@ func generateDataset() -> (String, [Pose3], [Pose3], Pose3, Pose3) {
     var viewMap: Yams.Node = [:]
     let imagePoints = imagePointsList[i]
     let wTh = wThList[i]
+    let eTo = eToList[i]
 
     viewMap["image_points"] = imagePoints.toYaml()
     viewMap["wTh"] = wTh.toYaml()
+    viewMap["eTo"] = eTo.toYaml()
     views.append(viewMap)
   }
   root["views"] = Yams.Node.sequence(views)
@@ -52,7 +54,7 @@ func generateDataset() -> (String, [Pose3], [Pose3], Pose3, Pose3) {
   return (yaml, wThList, eToList, hTe, wTo)
 }
 
-func readDataset(_ yaml: String) -> ([Vector3], [[Vector2]], [Pose3], [Pose3], Cal3_S2) {
+func readDataset(_ yaml: String) -> ([Vector3], [[Vector2]], [Pose3], [Pose3]?, Cal3_S2) {
   let root = try! Yams.compose(yaml: yaml)!
 
   var wThList: [Pose3] = []
@@ -60,15 +62,24 @@ func readDataset(_ yaml: String) -> ([Vector3], [[Vector2]], [Pose3], [Pose3], C
   var imagePointsList: [[Vector2]] = []
   for view in (root["views"]?.sequence)! {
     wThList.append(.fromYaml(view["wTh"]!))
-    // TODO: Handle when no eTo in YAML!
-    eToList.append(.fromYaml(view["eTo"]!))
+    
+    // Check if there is eTo in YAML!
+    if let eTo = view["eTo"] {
+      eToList.append(.fromYaml(eTo))
+    }
+
     imagePointsList.append(.fromYaml(view["image_points"]!))
   }
   
   let objectPoints: [Vector3] = .fromYaml(root["object_points"]!)
   let cameraCalibration: Cal3_S2 = .fromYaml(root["camera_calibration"]!)
 
-  return (objectPoints, imagePointsList, wThList, eToList, cameraCalibration)
+  // Discard all eTo if some views don't have it
+  if wThList.count == eToList.count {
+    return (objectPoints, imagePointsList, wThList, eToList, cameraCalibration)
+  } else {
+    return (objectPoints, imagePointsList, wThList, nil, cameraCalibration)
+  }
 }
 
 func main() {
@@ -111,7 +122,7 @@ func main() {
     }
   }
 
-  // Try camera resectioning
+  // Camera resectioning
   var eToList_estimate: [Pose3] = []
   for i in 0..<wThList.count {
     let imagePoints = imagePointsList[i]
