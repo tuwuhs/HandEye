@@ -122,6 +122,17 @@ func main() {
     }
   }
 
+  performSFMOptimization(
+    imagePointsList: imagePointsList,
+    objectPointsEstimate: objectPoints.map { $0 + Vector3(0.01, 0, 0) },
+    posesEstimate: eToList!.map { $0.inverse() * Pose3(
+      Rot3.fromRvec(Vector3(0, 0, 0)),
+      Vector3(0, 0, 0))
+    },
+    calibration: cameraCalibration)
+  
+  return
+
   // Camera resectioning
   var eToList_estimate: [Pose3] = []
   for i in 0..<wThList.count {

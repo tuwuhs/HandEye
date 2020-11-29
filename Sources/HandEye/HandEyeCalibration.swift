@@ -265,3 +265,53 @@ public func calibrateHandEye_factorGraphImagePoints<Calibration: CameraCalibrati
 
   return (x[hTeID], x[wToID])
 }
+
+
+// MARK: - SFM optimizer
+
+public func performSFMOptimization<Calibration: CameraCalibration & Equatable>(
+    imagePointsList: [[Vector2]], objectPointsEstimate: [Vector3], posesEstimate: [Pose3], calibration: Calibration) 
+    -> ([Pose3], [Vector3]) {
+  var values = VariableAssignments()
+  var graph = FactorGraph()
+
+  let xIDList = posesEstimate.map { values.store($0) }
+  let lIDList = objectPointsEstimate.map { values.store($0) }
+
+  // for xID in xIDList {
+  //   print(values[xID])
+  // }
+  // for lID in lIDList {
+  //   print(values[lID])
+  // }
+  
+  for i in 0..<posesEstimate.count {
+    for j in 0..<objectPointsEstimate.count {
+      let measurement = imagePointsList[i][j]
+      graph.store(ProjectionFactor(xIDList[i], lIDList[j], measurement, calibration))
+    }
+  }
+
+  graph.store(PriorFactor(xIDList[0], posesEstimate[0]))
+  graph.store(VectorPriorFactor(lIDList[0], objectPointsEstimate[0]))
+
+  // var optimizer = LM(precision: 1e-6, max_iteration: 200)
+  // try? optimizer.optimize(graph: graph, initial: &values)
+
+  for _ in 0..<120 {
+    let gfg = graph.linearized(at: values)
+    var dx = values.tangentVectorZeros
+    var opt = GenericCGLS(precision: 0, max_iteration: 18*6 + 9*3)
+    opt.optimize(gfg: gfg, initial: &dx)
+    values.move(along: dx)
+  }
+
+  for xID in xIDList {
+    print(values[xID])
+  }
+  for lID in lIDList {
+    print(values[lID])
+  }
+  
+  return ([], [])
+}
