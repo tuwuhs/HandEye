@@ -1,4 +1,5 @@
 
+import Dispatch
 import PenguinStructures
 import SwiftFusion
 import TensorFlow
@@ -251,12 +252,33 @@ public func calibrateHandEye_factorGraphImagePoints<Calibration: CameraCalibrati
   // opt.max_inner_iteration = 120
   // try? opt.optimize(graph: graph, initial: &x)
 
-  for _ in 0..<120 {
-    let gfg = graph.linearized(at: x)
+  // for _ in 0..<120 {
+  //   let gfg = graph.linearized(at: x)
+  //   var dx = x.tangentVectorZeros
+  //   var opt = GenericCGLS(precision: 0, max_iteration: 120)
+  //   opt.optimize(gfg: gfg, initial: &dx)
+  //   x.move(along: dx)
+  // }
+
+  var timestamps: [DispatchTime] = []
+  let start = DispatchTime.now()
+  for _ in 0..<10 {
+    timestamps.append(DispatchTime.now())
+    let linearized = graph.linearized(at: x)
+    timestamps.append(DispatchTime.now())
     var dx = x.tangentVectorZeros
-    var opt = GenericCGLS(precision: 0, max_iteration: 120)
-    opt.optimize(gfg: gfg, initial: &dx)
+    timestamps.append(DispatchTime.now())
+    var optimizer = GenericCGLS(precision: 0, max_iteration: 100)
+    timestamps.append(DispatchTime.now())
+    optimizer.optimize(gfg: linearized, initial: &dx)
+    timestamps.append(DispatchTime.now())
     x.move(along: dx)
+  }
+  timestamps.append(DispatchTime.now())
+
+  for (ts1, ts2) in zip(timestamps[0..<timestamps.count-1], timestamps[1...]) {
+    let timeInterval = ts2.uptimeNanoseconds - ts1.uptimeNanoseconds
+    print(timeInterval)
   }
 
   // Error vectors
