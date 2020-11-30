@@ -168,8 +168,8 @@ func main() {
     imagePointsList: imagePointsList, 
     objectPoints: objectPoints, 
     cameraCalibration: cameraCalibration,
-    hTeEstimate: Pose3(),
-    wToEstimate: Pose3())
+    hTeEstimate: hTe_tsai,
+    wToEstimate: wTo_tsai)
 
   print("Factor graph, image point measurements")
   print("Estimated hand-to-eye: \(hTe_fgImagePoints)")

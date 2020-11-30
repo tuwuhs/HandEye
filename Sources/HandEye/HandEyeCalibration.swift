@@ -10,18 +10,18 @@ public func performCameraResectioning<Calibration: CameraCalibration>(
     imagePoints: [Vector2], objectPoints: [Vector3], calibration: Calibration) 
     -> Pose3 {
   var x = VariableAssignments()
-  let camPoseId = x.store(Pose3(
-    Rot3(
-      -1.0, 0.0, 0.0,
-      0.0, 1.0, 0.0,
-      0.0, 0.0, -1.0), 
-    Vector3(-0.1, -0.1, 0.1)))
   // let camPoseId = x.store(Pose3(
   //   Rot3(
-  //     1.0, 0.0, 0.0,
-  //     0.0, -1.0, 0.0,
+  //     -1.0, 0.0, 0.0,
+  //     0.0, 1.0, 0.0,
   //     0.0, 0.0, -1.0), 
   //   Vector3(-0.1, -0.1, 0.1)))
+  let camPoseId = x.store(Pose3(
+    Rot3(
+      1.0, 0.0, 0.0,
+      0.0, -1.0, 0.0,
+      0.0, 0.0, -1.0), 
+    Vector3(-0.1, -0.1, 0.1)))
 
   var graph = FactorGraph()
 
@@ -226,18 +226,18 @@ public func calibrateHandEye_factorGraphImagePoints<Calibration: CameraCalibrati
     assert(imagePoints.count == objectPoints.count)
 
     // let oTeID = x.store(eToEstimates[i])
-    let oTeID = x.store(Pose3(
-      Rot3(
-        -1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 0.0, -1.0), 
-      Vector3(-0.1, -0.1, 0.1)))
     // let oTeID = x.store(Pose3(
     //   Rot3(
-    //     1.0, 0.0, 0.0,
-    //     0.0, -1.0, 0.0,
+    //     -1.0, 0.0, 0.0,
+    //     0.0, 1.0, 0.0,
     //     0.0, 0.0, -1.0), 
     //   Vector3(-0.1, -0.1, 0.1)))
+    let oTeID = x.store(Pose3(
+      Rot3(
+        1.0, 0.0, 0.0,
+        0.0, -1.0, 0.0,
+        0.0, 0.0, -1.0), 
+      Vector3(-0.1, -0.1, 0.1)))
     oTeIDList.append(oTeID)
 
     graph.store(HandEyePoseFactor(hTeID, wToID, oTeID, wThList[i]))
